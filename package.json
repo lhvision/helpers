@@ -1,0 +1,55 @@
+{
+  "name": "@lhvision/helpers",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "一些简单实用的工具函数",
+  "author": "lhvision",
+  "license": "MIT",
+  "homepage": "https://github.com/lhvision/helpers#readme",
+  "bugs": {
+    "url": "https://github.com/lhvision/helpers/issues"
+  },
+  "keywords": [
+    "helpers"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.umd.cjs"
+    }
+  },
+  "main": "./dist/index.umd.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": "^18.0.0 || >=20.0.0"
+  },
+  "scripts": {
+    "build": "vite build && tsc && rollup -c",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^2.18.0",
+    "@types/node": "^20.12.12",
+    "eslint": "^8.57.0",
+    "eslint-plugin-format": "^0.1.1",
+    "jsdom": "^24.0.0",
+    "lint-staged": "^15.2.2",
+    "rollup": "^4.17.2",
+    "rollup-plugin-dts": "^6.1.0",
+    "simple-git-hooks": "^2.11.1",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11",
+    "vitest": "^1.6.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged && pnpm test"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
+  }
+}
