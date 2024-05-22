@@ -1,7 +1,7 @@
 {
   "name": "@lhvision/helpers",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "一些简单实用的工具函数",
   "author": "lhvision",
   "license": "MIT",
@@ -30,7 +30,8 @@
   },
   "scripts": {
     "build": "vite build && tsc && rollup -c",
-    "test": "vitest run"
+    "test": "vitest run",
+    "publish-with-otp": "./publish-with-otp.sh"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^2.18.0",
