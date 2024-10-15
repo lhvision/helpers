@@ -53,7 +53,7 @@ async function main() {
   await $`git add .`
   await $`git commit -m "chore(release): v${currentVersion}"`
   await $`git tag v${currentVersion}`
-  await $`git push origin main`
+  await $`git push origin HEAD`
   await $`git push origin v${currentVersion}`
   colorLog('推送代码成功!', 'success')
 }
