@@ -3,10 +3,13 @@ class Queue {
   private running = 0
   private retries = 0
   private queue: (() => Promise<void>)[] = []
+  private exitOnError: boolean
+  private isAborting = false
 
-  constructor(concurrencyLimit: number, retries: number) {
+  constructor(concurrencyLimit: number, retries: number, exitOnError: boolean) {
     this.concurrencyLimit = concurrencyLimit
     this.retries = retries
+    this.exitOnError = exitOnError
   }
 
   /**
@@ -38,15 +41,23 @@ class Queue {
   public add<T>(fn: () => Promise<T>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const retryTask = async (remainingRetries: number) => {
+        if (this.isAborting) {
+          return reject(new Error('Queue execution aborted'))
+        }
         try {
           const result = await fn()
           resolve(result)
         }
         catch (error) {
-          if (remainingRetries > 0)
+          if (remainingRetries > 0) {
             retryTask(remainingRetries - 1)
-          else
+          }
+          else {
+            if (this.exitOnError) {
+              this.isAborting = true
+            }
             reject(error)
+          }
         }
       }
 
@@ -69,9 +80,10 @@ class Queue {
  * 定义一个工厂函数，用于创建具有特定并发限制的 pLimit 实例
  * @param limit 并发限制
  * @param retries 发生错误时重试次数，默认为 0，不重试
+ * @param exitOnError 发生错误时是否退出进程，默认为 false，不退出
  * @returns 返回一个函数，该函数接收一个任务并将其添加到队列中
  */
-export function pLimit(limit: number, retries = 0) {
-  const queue = new Queue(limit, retries)
+export function pLimit(limit: number, retries = 0, exitOnError = false) {
+  const queue = new Queue(limit, retries, exitOnError)
   return <T>(task: () => Promise<T>) => queue.add(task)
 }
