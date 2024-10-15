@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Type of release
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # 允许创建 GitHub Releases
+      packages: write # 允许发布 npm 包
+
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 设置 Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # 配置 Git 用户信息
+      - name: Setup Git user info
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
+      # 安装和激活 pnpm
+      - name: Setup pnpm
+        run: |
+          echo "registry=https://registry.npmjs.org" > ~/.npmrc
+          corepack enable
+          corepack prepare pnpm@9.9.0 --activate
+
+      # 使用缓存加速 pnpm 依赖安装
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install changesets
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+        continue-on-error: false
+
+      - name: Run publish script
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          pnpm zx scripts/ci-publish.js ${{ github.event.inputs.release_type }}
