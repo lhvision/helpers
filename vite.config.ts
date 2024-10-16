@@ -13,7 +13,7 @@ export default defineConfig({
         index: resolve(__dirname, 'src/index.ts'),
         browser: resolve(__dirname, 'src/browser/index.ts'),
         node: resolve(__dirname, 'src/node/index.ts'),
-        common: resolve(__dirname, 'src/common/index.ts'),
+        shared: resolve(__dirname, 'src/shared/index.ts'),
       },
       name: '@lhvision/helpers',
       formats: ['es', 'cjs'],

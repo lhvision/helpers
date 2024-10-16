@@ -20,7 +20,7 @@ export default [
       index: resolve(rootDir, 'dist/types/index.d.ts'),
       browser: resolve(rootDir, 'dist/types/browser/index.d.ts'),
       node: resolve(rootDir, 'dist/types/node/index.d.ts'),
-      common: resolve(rootDir, 'dist/types/common/index.d.ts'),
+      shared: resolve(rootDir, 'dist/types/shared/index.d.ts'),
     },
     output: {
       dir: resolve(rootDir, 'dist'),

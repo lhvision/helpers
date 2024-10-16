@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { pLimit } from '../common/pLimit'
+import { pLimit } from '../shared/pLimit'
 
 // 记录每个任务的开始和结束时间
 const taskStartTimes: number[] = []
