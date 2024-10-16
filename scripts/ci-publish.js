@@ -46,13 +46,14 @@ async function updateVersion() {
 async function main() {
   const currentVersion = await updateVersion()
 
-  await $`pnpm publish --access public --registry https://registry.npmjs.org`
-  colorLog('发布成功!', 'success')
-
   await $`pnpm changelog`
   await $`git add .`
   await $`git commit -m "chore(release): v${currentVersion}"`
   await $`git tag v${currentVersion}`
+
+  await $`pnpm publish --access public --registry https://registry.npmjs.org`
+  colorLog('发布成功!', 'success')
+
   await $`git push origin HEAD`
   await $`git push origin v${currentVersion}`
   colorLog('推送代码成功!', 'success')

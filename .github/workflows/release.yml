@@ -30,6 +30,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20'
+          registry-url: 'https://registry.npmjs.org/'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # 配置 Git 用户信息
       - name: Setup Git user info
@@ -40,7 +43,6 @@ jobs:
       # 安装和激活 pnpm
       - name: Setup pnpm
         run: |
-          echo "registry=https://registry.npmjs.org" > ~/.npmrc
           corepack enable
           corepack prepare pnpm@9.9.0 --activate
 
@@ -60,7 +62,7 @@ jobs:
         continue-on-error: false
 
       - name: Run publish script
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           pnpm zx scripts/ci-publish.js ${{ github.event.inputs.release_type }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BaseUsageUnitEnum, processByte } from '../byte'
+import { BaseUsageUnitEnum, processByte } from '../common/byte'
 
 describe('processByte function', () => {
   it('should convert bytes correctly with default decimal places', () => {

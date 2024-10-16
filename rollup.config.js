@@ -9,16 +9,21 @@ function deleteFolderPlugin(folderPath) {
   return {
     name: 'delete-folder-plugin',
     async buildEnd() {
-      await rm(folderPath, { recursive: true })
+      await rm(folderPath, { recursive: true, force: true })
     },
   }
 }
 
 export default [
   {
-    input: resolve(rootDir, 'dist/types/index.d.ts'),
+    input: {
+      index: resolve(rootDir, 'dist/types/index.d.ts'),
+      browser: resolve(rootDir, 'dist/types/browser/index.d.ts'),
+      node: resolve(rootDir, 'dist/types/node/index.d.ts'),
+      common: resolve(rootDir, 'dist/types/common/index.d.ts'),
+    },
     output: {
-      file: resolve(rootDir, 'dist/index.d.ts'),
+      dir: resolve(rootDir, 'dist'),
       format: 'es',
     },
     plugins: [dts(), deleteFolderPlugin(resolve(rootDir, 'dist/types'))],

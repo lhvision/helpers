@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { expect, it } from 'vitest'
-import { getTokenPayload, isTokenExpiringSoon } from '../token'
+import { getTokenPayload, isTokenExpiringSoon } from '../browser/token'
 
 const testJWToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRlc3R1c2VyIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNjg0NjYxNTIwLCJleHAiOjE2ODQ2NjUxMjB9.PXhGjCvthQ_r4EuMy_CQhRm4Gz6APU6rT9Yt4ct57-U'
 
