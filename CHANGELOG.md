@@ -1,3 +1,9 @@
+## <small>1.0.2 (2024-10-16)</small>
+
+* feat: 新增 fullScreen 操作相关函数 ([ab7f6d5](https://github.com/lhvision/helpers/commit/ab7f6d5))
+
+
+
 ## <small>1.0.1 (2024-10-15)</small>
 
 * feat: 同步上一个发布的版本内容 ([21fb328](https://github.com/lhvision/helpers/commit/21fb328))
