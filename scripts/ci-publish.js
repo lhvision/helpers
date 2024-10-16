@@ -1,9 +1,9 @@
+import { readFile, writeFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
 import { argv, exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { join, resolve } from 'node:path'
-import { readFile, writeFile } from 'node:fs/promises'
-import { $ } from 'zx'
 import { colorLog } from '@lhvision/helpers'
+import { $ } from 'zx'
 
 const args = argv.slice(2)
 const releaseType = args.find(arg => ['patch', 'minor', 'major'].includes(arg))

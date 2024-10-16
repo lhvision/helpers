@@ -1,10 +1,10 @@
 import { platform } from 'node:os'
 import { exit } from 'node:process'
+import { colorLog } from '@lhvision/helpers'
 // import { fileURLToPath } from 'node:url'
 // import { join, resolve } from 'node:path'
 // import { existsSync, readFileSync } from 'node:fs'
 import { $, question, usePowerShell } from 'zx'
-import { colorLog } from '@lhvision/helpers'
 
 // npm whoami  查看是否登陆
 // npm adducer/npm login 进行登陆

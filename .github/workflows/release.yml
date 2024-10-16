@@ -46,6 +46,12 @@ jobs:
           corepack enable
           corepack prepare pnpm@9.9.0 --activate
 
+      - name: Install dependencies and build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+        continue-on-error: false
+
       # 使用缓存加速 pnpm 依赖安装
       - name: Cache pnpm dependencies
         uses: actions/cache@v4
@@ -54,12 +60,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-
-      - name: Install changesets
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm build
-        continue-on-error: false
 
       - name: Run publish script
         run: |
