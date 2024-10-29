@@ -80,7 +80,7 @@ class Queue {
  * 定义一个工厂函数，用于创建具有特定并发限制的 pLimit 实例
  * @param limit 并发限制
  * @param retries 发生错误时重试次数，默认为 0，不重试
- * @param exitOnError 发生错误时是否退出进程，默认为 false，不退出
+ * @param exitOnError 发生错误时是否直接退出队列，默认为 false，不退出
  * @returns 返回一个函数，该函数接收一个任务并将其添加到队列中
  */
 export function pLimit(limit: number, retries = 0, exitOnError = false) {

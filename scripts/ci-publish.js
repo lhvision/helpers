@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { argv, exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { colorLog } from '@lhvision/helpers'
+import { colorLog } from '@lhvision/helpers/node'
 import { $ } from 'zx'
 
 const args = argv.slice(2)

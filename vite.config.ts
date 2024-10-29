@@ -6,8 +6,14 @@ import { defineConfig } from 'vite'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+// eslint-disable-next-line node/prefer-global/process
+const isDev = process.env.__DEV__ === 'true'
+
 export default defineConfig({
   build: {
+    sourcemap: isDev,
+    // 构建时清空目录
+    // emptyOutDir: !isDev,
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
@@ -16,7 +22,18 @@ export default defineConfig({
         shared: resolve(__dirname, 'src/shared/index.ts'),
       },
       name: '@lhvision/helpers',
-      formats: ['es', 'cjs'],
+    },
+    rollupOptions: {
+      external: isDev ? undefined : ['hash-wasm'],
+    },
+  },
+  worker: {
+    format: 'es',
+    rollupOptions: {
+      external: isDev ? undefined : ['hash-wasm'],
+      output: {
+        format: 'es', // 确保使用 ESM 格式
+      },
     },
   },
 })

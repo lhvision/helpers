@@ -1,6 +1,6 @@
 import { platform } from 'node:os'
 import { exit } from 'node:process'
-import { colorLog } from '@lhvision/helpers'
+import { colorLog } from '@lhvision/helpers/node'
 // import { fileURLToPath } from 'node:url'
 // import { join, resolve } from 'node:path'
 // import { existsSync, readFileSync } from 'node:fs'
