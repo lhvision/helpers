@@ -1,3 +1,9 @@
+## <small>1.0.4 (2024-10-29)</small>
+
+* feat: 新增 md5-hash、upload、图片转 base64 相关函数 ([9fcf872](https://github.com/lhvision/helpers/commit/9fcf872))
+
+
+
 ## <small>1.0.3 (2024-10-16)</small>
 
 * feat: 新增 LRUCache，AsyncLRUCache 类实现 ([711ca0a](https://github.com/lhvision/helpers/commit/711ca0a))
