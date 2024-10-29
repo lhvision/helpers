@@ -1,3 +1,9 @@
+## <small>1.0.5 (2024-10-29)</small>
+
+* fix: 删除 byte.ts 中的意外导出，调整 upload 中的 worker 引入为内联 ([ee37eb2](https://github.com/lhvision/helpers/commit/ee37eb2))
+
+
+
 ## <small>1.0.4 (2024-10-29)</small>
 
 * feat: 新增 md5-hash、upload、图片转 base64 相关函数 ([9fcf872](https://github.com/lhvision/helpers/commit/9fcf872))
