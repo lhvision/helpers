@@ -1,32 +1,20 @@
-export enum BaseUsageUnitEnum {
-  BYTE = 'Byte',
-  KB = 'KB',
-  MB = 'MB',
-  GB = 'GB',
-  TB = 'TB',
-  PB = 'PB',
-  EB = 'EB',
-  ZB = 'ZB',
-  YB = 'YB',
-}
-
-const BaseUsageUnitValues = Object.values(BaseUsageUnitEnum)
-
+const BaseUsageUnitValues = ['Byte', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] as const
 const baseByteNum = 1024
-
-const maxUnitIndex = BaseUsageUnitValues.indexOf(BaseUsageUnitEnum.YB)
 
 export function processByte(
   num: number,
-  defaultByteDecimal = BaseUsageUnitEnum.BYTE,
+  defaultByteDecimal: typeof BaseUsageUnitValues[number] = 'Byte',
 ): string {
-  let byteDecimal = BaseUsageUnitValues.indexOf(defaultByteDecimal)
+  const byteDecimal = BaseUsageUnitValues.indexOf(defaultByteDecimal)
   let currentNum = num / (1024 ** byteDecimal)
-  while (currentNum >= baseByteNum && byteDecimal < maxUnitIndex) {
+  let newByteDecimal = byteDecimal
+
+  while (currentNum >= baseByteNum && newByteDecimal < BaseUsageUnitValues.length - 1) {
     currentNum /= baseByteNum
-    byteDecimal++
+    newByteDecimal++
   }
-  const byteBase = 1024 ** byteDecimal
+
+  const byteBase = 1024 ** newByteDecimal
   const base = 10 ** 2
-  return `${Math.round((num / byteBase) * base) / base} ${BaseUsageUnitValues[byteDecimal]}`
+  return `${Math.round((num / byteBase) * base) / base} ${BaseUsageUnitValues[newByteDecimal]}`
 }

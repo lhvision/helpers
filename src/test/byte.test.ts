@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BaseUsageUnitEnum, processByte } from '../shared/byte'
+import { processByte } from '../shared/byte'
 
 describe('processByte function', () => {
   it('should convert bytes correctly with default decimal places', () => {
@@ -26,8 +26,8 @@ describe('processByte function', () => {
   })
 
   it('should handle custom decimal places', () => {
-    expect(processByte(1024 ** 2, BaseUsageUnitEnum.KB)).toBe('1 MB')
-    expect(processByte(1024 ** 4, BaseUsageUnitEnum.MB)).toBe('1 TB')
+    expect(processByte(1024 ** 2, 'KB')).toBe('1 MB')
+    expect(processByte(1024 ** 4, 'MB')).toBe('1 TB')
   })
 
   it('should handle very large numbers', () => {

@@ -8,6 +8,7 @@ const __dirname = dirname(__filename)
 
 // eslint-disable-next-line node/prefer-global/process
 const isDev = process.env.__DEV__ === 'true'
+const external = isDev ? undefined : ['hash-wasm']
 
 export default defineConfig({
   build: {
@@ -24,13 +25,13 @@ export default defineConfig({
       name: '@lhvision/helpers',
     },
     rollupOptions: {
-      external: isDev ? undefined : ['hash-wasm'],
+      external,
     },
   },
   worker: {
     format: 'es',
     rollupOptions: {
-      external: isDev ? undefined : ['hash-wasm'],
+      external,
       output: {
         format: 'es', // 确保使用 ESM 格式
       },

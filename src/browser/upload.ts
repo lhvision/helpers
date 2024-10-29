@@ -1,4 +1,6 @@
 import { hashWASMMD5 } from './hash'
+import HashSharedWorker from './worker/hashSharedWorker?sharedworker&inline'
+import HashWorker from './worker/hashWorker?worker&inline'
 
 export interface WorkerMessage {
   file: Blob
@@ -23,7 +25,6 @@ export interface HashResult {
 }
 
 const defaultChunkSize = 4 * 1024 * 1024
-const concurrency = navigator.hardwareConcurrency || 4
 
 function getChunkBounds(i: number, chunkSize: number, fileSize: number) {
   const chunkStart = i * chunkSize
@@ -71,11 +72,12 @@ export async function largeFileHashWithWorkers(
   chunkSize = defaultChunkSize,
   onChunkHashed?: (result: HashResult[]) => void,
 ) {
+  const concurrency = navigator.hardwareConcurrency || 4
   const chunkCount = Math.ceil(file.size / chunkSize)
   const results: HashResult[] = Array.from({ length: chunkCount })
 
-  const workers: Worker[] = Array.from({ length: concurrency }, () =>
-    new Worker(new URL('./worker/hashWorker.ts', import.meta.url), { type: 'module' }))
+  const workers: Worker[] = Array.from({ length: concurrency }, () => new HashWorker())
+  // new Worker(new URL('./worker/hashWorker.ts', import.meta.url), { type: 'module' }))
 
   const workerPromises: Promise<void>[] = workers.map((worker, workerIndex) => {
     return new Promise<void>((resolve, reject) => {
@@ -152,7 +154,8 @@ export async function largeFileHashWithSharedWorker(
   const chunkCount = Math.ceil(file.size / chunkSize)
   const results: HashResult[] = Array.from({ length: chunkCount })
 
-  const worker = new SharedWorker(new URL('./worker/hashSharedWorker.ts', import.meta.url), { type: 'module' })
+  // const worker = new SharedWorker(new URL('./worker/hashSharedWorker.ts', import.meta.url), { type: 'module' })
+  const worker = new HashSharedWorker()
 
   return new Promise<HashResult[]>((resolve, reject) => {
     let completedChunks = 0
