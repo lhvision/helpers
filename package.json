@@ -38,14 +38,18 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": "./bin/create-worker.js",
   "files": [
+    "bin",
     "dist"
   ],
   "engines": {
     "node": "^18.0.0 || >=20.0.0"
   },
   "scripts": {
-    "build": "vite build && tsc && rollup -c",
+    "build": "pnpm build-only && pnpm type-dts",
+    "build-only": "vite build",
+    "type-dts": "tsc && rollup -c",
     "build:debug": "cross-env __DEV__=true vite build",
     "test": "vitest run",
     "oxlint": "npx oxlint@latest",
@@ -76,6 +80,7 @@
     "inquirer": "^9.3.7",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.10",
+    "npm-run-all2": "^7.0.1",
     "rollup": "^4.24.2",
     "rollup-plugin-dts": "^6.1.1",
     "simple-git-hooks": "^2.11.1",
