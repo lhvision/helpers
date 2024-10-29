@@ -1,3 +1,9 @@
+## <small>1.0.6 (2024-10-29)</small>
+
+* fix: 调整 largeFileHashWithWorkers 实现，新增默认命令创建一个 worker/hashWorker.ts 文件 ([e466d99](https://github.com/lhvision/helpers/commit/e466d99))
+
+
+
 ## <small>1.0.5 (2024-10-29)</small>
 
 * fix: 删除 byte.ts 中的意外导出，调整 upload 中的 worker 引入为内联 ([ee37eb2](https://github.com/lhvision/helpers/commit/ee37eb2))
