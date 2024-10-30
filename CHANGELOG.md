@@ -1,3 +1,9 @@
+## <small>1.0.7 (2024-10-30)</small>
+
+* feat: 调整 upload 作为独立的模块 ([2218cbb](https://github.com/lhvision/helpers/commit/2218cbb))
+
+
+
 ## <small>1.0.6 (2024-10-29)</small>
 
 * fix: 调整 largeFileHashWithWorkers 实现，新增默认命令创建一个 worker/hashWorker.ts 文件 ([e466d99](https://github.com/lhvision/helpers/commit/e466d99))
