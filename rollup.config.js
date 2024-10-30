@@ -21,6 +21,7 @@ export default [
       browser: resolve(rootDir, 'dist/types/browser/index.d.ts'),
       node: resolve(rootDir, 'dist/types/node/index.d.ts'),
       shared: resolve(rootDir, 'dist/types/shared/index.d.ts'),
+      upload: resolve(rootDir, 'dist/types/upload/index.d.ts'),
     },
     output: {
       dir: resolve(rootDir, 'dist'),

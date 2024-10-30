@@ -17,7 +17,7 @@ export async function initHashWASM() {
     }
     catch (error: any) {
       throw new Error(
-        `Failed to load hash-wasm. Please ensure that hash-wasm is installed: npm install hash-wasm, ${error?.message}`,
+        `Failed to load hash-wasm. Please ensure that hash-wasm is installed: pnpm add hash-wasm, ${error?.message}`,
       )
     }
   }

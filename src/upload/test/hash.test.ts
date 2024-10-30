@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { beforeAll, describe, expect, it } from 'vitest'
-import { hashWASMMD5, initHashWASM, largeFileHashWASMMD5 } from '../browser/hash'
+import { hashWASMMD5, initHashWASM, largeFileHashWASMMD5 } from '../hash'
 
 describe('hash Functions', () => {
   beforeAll(async () => {

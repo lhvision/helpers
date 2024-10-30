@@ -27,6 +27,9 @@ export const colorANSIMap = {
   bgWhite: '\x1B[47m',
 } as const
 
+/**
+ * 简单的实现，更复杂颜色的请使用 chalk 库，使用 ansi-escapes 库控制打印光标位置
+ */
 export function colorLog(message: string, type: ColorType = 'info') {
   let color: ValueOf<typeof colorANSIMap>
 

@@ -33,12 +33,19 @@
       "types": "./dist/shared.d.ts",
       "import": "./dist/shared.js",
       "require": "./dist/shared.cjs"
+    },
+    "./upload": {
+      "types": "./dist/upload.d.ts",
+      "import": "./dist/upload.js",
+      "require": "./dist/upload.cjs"
     }
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": "./bin/create-worker.js",
+  "bin": {
+    "helpers": "bin/create-worker.js"
+  },
   "files": [
     "bin",
     "dist"

@@ -21,20 +21,22 @@ export default defineConfig({
         browser: resolve(__dirname, 'src/browser/index.ts'),
         node: resolve(__dirname, 'src/node/index.ts'),
         shared: resolve(__dirname, 'src/shared/index.ts'),
+        upload: resolve(__dirname, 'src/upload/index.ts'),
       },
       name: '@lhvision/helpers',
+      formats: ['es', 'cjs'],
     },
     rollupOptions: {
       external,
     },
   },
-  worker: {
-    format: 'es',
-    rollupOptions: {
-      external,
-      output: {
-        format: 'es', // 确保使用 ESM 格式
-      },
-    },
-  },
+  // worker: {
+  //   format: 'es',
+  //   rollupOptions: {
+  //     external,
+  //     output: {
+  //       format: 'es',
+  //     },
+  //   },
+  // },
 })

@@ -31,7 +31,7 @@ function getChunkBounds(i: number, chunkSize: number, fileSize: number) {
 }
 
 /**
- * 分割大文件，计算每个分片的 MD5 值，使用 WebAssembly 实现。
+ * 分割大文件，计算每个分片的 MD5 值。
  * @param file 文件对象
  * @param chunkSize 分片大小，默认为 4MB
  * @param onChunkHashed 每一个分片计算完成后的回调函数，参数为计算结果
@@ -59,9 +59,10 @@ export async function largeFileHashList(
 }
 
 /**
+ * 每个 worker 都会加载 hashWASMMD5 函数，函数依赖了 hash-wasm 库，所以网络不好的情况下可能会比在渲染主线程直接处理更慢
  * 分割大文件，计算每个分片的 MD5 值，使用 Web Worker 并行计算。
  * @param file 文件对象
- * @param createWorker 使用 pnpm \@lhvision/helpers 创建一个 worker 实现
+ * @param createWorker 可以使用 pnpm helpers 默认生成位置参数 [src/worker] 创建一个 worker 实现
  * @param chunkSize 分片大小，默认为 4MB
  * @param onChunkHashed 每一个分片计算完成后的回调函数，参数为计算结果
  * @returns Promise，包含每个分片的 MD5 值和原始 Blob 对象

@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { cwd, exit } from 'node:process'
+import { argv, cwd, exit } from 'node:process'
 import { colorLog } from '@lhvision/helpers/node'
 
-const hashWorkerCode = `import type { HashResult, WorkerMessage } from '@lhvision/helpers/browser';
-import { hashWASMMD5 } from '@lhvision/helpers/browser';
+const args = argv.slice(2)
+const targetMkdir = args[0] || 'src/worker'
 
-// 使用方式 await largeFileHashWithWorkers(selectedFile.value, () => new Worker(new URL('@/worker/hashWorker.ts', import.meta.url), { type: 'module' }));
+const hashWorkerCode = `import type { HashResult, WorkerMessage } from '@lhvision/helpers/upload';
+import { hashWASMMD5 } from '@lhvision/helpers/upload';
+
+// await largeFileHashWithWorkers(selectedFile.value, () => new Worker(new URL('@/worker/hashWorker.ts', import.meta.url), { type: 'module' }));
 
 onmessage = async (event: MessageEvent<WorkerMessage>) => {
   const { file, startChunkIndex, endChunkIndex, chunkSize } = event.data;
@@ -49,11 +52,11 @@ onmessage = async (event: MessageEvent<WorkerMessage>) => {
 };`
 
 async function main() {
-  const targetPath = resolve(cwd(), 'src/worker/hashWorker.ts')
-  await mkdir(resolve(cwd(), 'src/worker'), { recursive: true })
+  const targetPath = resolve(cwd(), `${targetMkdir}/hashWorker.ts`)
+  await mkdir(resolve(cwd(), targetMkdir), { recursive: true })
   // 将 Worker 代码写入到目标文件
   writeFile(targetPath, hashWorkerCode, 'utf-8')
-  colorLog('hashWorker.ts created in src/worker directory', 'success')
+  colorLog(`hashWorker.ts created in ${targetMkdir} directory`, 'success')
 }
 
 main().catch((error) => {
