@@ -39,6 +39,9 @@ class Queue {
    * @returns 返回一个Promise，表示任务完成时的结果
    */
   public add<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.isAborting) {
+      return Promise.reject(new Error('Queue execution aborted'))
+    }
     return new Promise<T>((resolve, reject) => {
       const retryTask = async (remainingRetries: number) => {
         if (this.isAborting) {
@@ -63,14 +66,12 @@ class Queue {
 
       const task = async () => retryTask(this.retries)
 
+      // 将任务添加到队列中
+      this.queue.push(task)
+
       // 如果当前运行的任务数小于并发限制，则立即尝试开始任务
       if (this.running < this.concurrencyLimit) {
-        this.queue.push(task)
         this.startNext()
-      }
-      else {
-        // 否则，将任务添加到队列中，等待执行
-        this.queue.push(task)
       }
     })
   }

@@ -24,7 +24,7 @@ export default defineConfig({
         upload: resolve(__dirname, 'src/upload/index.ts'),
       },
       name: '@lhvision/helpers',
-      formats: ['es', 'cjs'],
+      formats: ['es'],
     },
     rollupOptions: {
       external,

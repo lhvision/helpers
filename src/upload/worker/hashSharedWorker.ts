@@ -1,5 +1,5 @@
-import type { SharedWorkerMessage } from '../upload'
-import { hashWASMMD5 } from '../hash'
+import type { SharedWorkerMessage } from '../hash'
+import { calculateMD5 } from '../hash'
 
 declare global {
   let onconnect: (event: MessageEvent) => void
@@ -12,7 +12,7 @@ onconnect = (event: MessageEvent) => {
     const { blob, ...rest } = event.data
 
     const arrayBuffer = await blob.arrayBuffer()
-    const hash = await hashWASMMD5(arrayBuffer)
+    const hash = await calculateMD5(arrayBuffer)
     port.postMessage({ hash, ...rest }) // 返回索引和哈希值
   }
 }

@@ -7,3 +7,5 @@
 ```bash
 pnpm add @lhvision/helpers
 ```
+
+**IMPORTANT:** 从 2.0 开始移除了 CJS 产物只支持 ESM

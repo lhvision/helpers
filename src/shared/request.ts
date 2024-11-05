@@ -1,0 +1,409 @@
+type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+
+// 请求配置接口，扩展自 fetch 的 RequestInit
+interface RequestOptions extends RequestInit {
+  /** 基础URL，会与请求URL拼接 */
+  baseURL?: string
+  /** 超时时间（毫秒） */
+  timeout?: number
+  /** 缓存配置 */
+  cacheConfig?: CacheConfig
+  /** 重试配置 */
+  retry?: RetryConfig
+  /**
+   * 使用 AbortController 控制取消请求
+   * const controller = new AbortController();
+   * signal: controller.signal
+   */
+  signal?: AbortSignal
+  /** 请求类型 */
+  method?: RequestMethod
+  /**
+   * 是否直接返回 data 数据
+   * @defaultValue true
+   */
+  returnData?: boolean
+}
+
+// 统一的响应格式
+interface Response<T = any> {
+  /** 响应数据 */
+  data: T
+  /** HTTP状态码 */
+  status: number
+  /** 状态描述 */
+  statusText: string
+  /** 响应头 */
+  headers: Headers
+}
+
+// 自定义请求错误类
+class RequestError extends Error {
+  constructor(
+    /** 错误信息 */
+    public message: string,
+    /** HTTP状态码 */
+    public status?: number,
+    /** 响应 */
+    public response?: Response,
+  ) {
+    super(message)
+    this.name = 'RequestError'
+  }
+}
+
+// 拦截器类型定义
+type RequestInterceptor = (config: RequestOptions) => RequestOptions | Promise<RequestOptions>
+type ResponseInterceptor = (response: Response) => Response | Promise<Response>
+type ErrorInterceptor = (error: RequestError) => any
+
+// 拦截器接口
+interface Interceptors {
+  /** 请求拦截器数组 */
+  request: RequestInterceptor[]
+  /** 响应拦截器数组 */
+  response: ResponseInterceptor[]
+  /** 错误拦截器数组 */
+  error: ErrorInterceptor[]
+}
+
+// 缓存接口
+interface CacheConfig {
+  /** 是否启用缓存 */
+  enable?: boolean
+  /**
+   * 缓存时间（毫秒）
+   * @defaultValue 5 * 60 * 1000
+   */
+  ttl?: number
+  /** 自定义缓存键 */
+  key?: string
+}
+
+// 重试配置
+interface RetryConfig {
+  /** 是否启用重试 */
+  enable?: boolean
+  /**
+   * 重试次数
+   * @defaultValue 3
+   */
+  count?: number
+  /**
+   * 重试延迟（毫秒）
+   * @defaultValue 1000
+   */
+  delay?: number
+}
+
+// 请求管理器类 - 使用单例模式
+export class RequestManager {
+  /** 单例实例 */
+  private static instance: RequestManager
+  /** 拦截器 */
+  private interceptors: Interceptors = {
+    /** 请求拦截器数组 */
+    request: [],
+    /** 响应拦截器数组 */
+    response: [],
+    /** 错误拦截器数组 */
+    error: [],
+  }
+
+  /** 缓存存储，使用 Map 结构存储请求结果 */
+  private cache = new Map<string, { data: any, timestamp: number }>()
+
+  // 并发控制相关属性
+  /** 最大同时进行的请求数 */
+  private maxConcurrent = 5
+  /** 当前正在处理的请求数 */
+  private currentRequests = 0
+  /** 等待队列 */
+  private queue: Array<() => Promise<any>> = []
+
+  /** 获取单例实例 */
+  static getInstance() {
+    if (!RequestManager.instance) {
+      RequestManager.instance = new RequestManager()
+    }
+    return RequestManager.instance
+  }
+
+  /** 获取请求拦截器 */
+  getRequestInterceptors() {
+    return this.interceptors.request
+  }
+
+  /** 获取响应拦截器 */
+  getResponseInterceptors() {
+    return this.interceptors.response
+  }
+
+  /** 获取错误拦截器 */
+  getErrorInterceptors() {
+    return this.interceptors.error
+  }
+
+  /** 添加请求拦截器 */
+  addRequestInterceptor(interceptor: RequestInterceptor) {
+    this.interceptors.request.push(interceptor)
+  }
+
+  /** 添加响应拦截器 */
+  addResponseInterceptor(interceptor: ResponseInterceptor) {
+    this.interceptors.response.push(interceptor)
+  }
+
+  /** 添加错误拦截器 */
+  addErrorInterceptor(interceptor: ErrorInterceptor) {
+    this.interceptors.error.push(interceptor)
+  }
+
+  /** 设置缓存 */
+  setCache(key: string, data: any, ttl: number) {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now() + ttl,
+    })
+  }
+
+  /** 获取缓存 */
+  getCache(key: string) {
+    const cached = this.cache.get(key)
+    if (!cached)
+      return null
+    if (Date.now() > cached.timestamp) {
+      this.cache.delete(key)
+      return null
+    }
+    return cached.data
+  }
+
+  /** 清除缓存 */
+  clearCache() {
+    this.cache.clear()
+  }
+
+  /** 请求执行方法 - 并发控制 */
+  async executeRequest<T>(
+    request: () => Promise<T>,
+  ): Promise<T> {
+    // 如果当前请求数达到上限，加入等待队列
+    if (this.currentRequests >= this.maxConcurrent) {
+      return new Promise((resolve) => {
+        this.queue.push(async () => {
+          const result = await request()
+          resolve(result)
+        })
+      })
+    }
+
+    // 执行请求
+    this.currentRequests++
+    try {
+      const result = await request()
+      return result
+    }
+    finally {
+      this.currentRequests--
+      // 处理队列中的下一个请求
+      if (this.queue.length > 0) {
+        const nextRequest = this.queue.shift()
+        nextRequest?.()
+      }
+    }
+  }
+}
+
+async function sendRequest<T = any>(
+  url: string,
+  options: RequestOptions = {},
+): Promise<Response<T>> {
+  // 获取请求管理器实例
+  const manager = RequestManager.getInstance()
+  // 解构合并后的配置
+  const {
+    baseURL = '',
+    timeout = 10000,
+    cacheConfig = { enable: false, ttl: 5 * 60 * 1000 },
+    retry = { enable: false, count: 3, delay: 1000 },
+    signal,
+    returnData = true,
+    ...fetchOptions
+  } = options
+
+  // 检查缓存
+  if (cacheConfig.enable) {
+    const cacheKey = cacheConfig.key || `${baseURL}${url}`
+    const cachedData = manager.getCache(cacheKey)
+    if (cachedData)
+      return cachedData
+  }
+
+  // 应用请求拦截器
+  let finalOptions = fetchOptions
+  for (const interceptor of manager.getRequestInterceptors()) {
+    finalOptions = await interceptor(finalOptions as RequestOptions)
+  }
+
+  // 创建用于超时控制的 AbortController
+  const timeoutController = new AbortController()
+  const timeoutId = setTimeout(() => timeoutController.abort(), timeout)
+
+  // 组合用户提供的 signal 和超时 signal
+  const controller = new AbortController()
+  if (signal) {
+    signal.addEventListener('abort', () => controller.abort())
+  }
+  timeoutController.signal.addEventListener('abort', () => controller.abort())
+
+  // 执行请求的核心方法
+  const executeRequest = async (retryCount = 0): Promise<Response<T>> => {
+    try {
+      const response = await fetch(`${baseURL}${url}`, {
+        ...finalOptions,
+        signal: controller.signal, // 使用组合后的 signal
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok)
+        throw new RequestError(response.statusText, response.status, response as any)
+
+      // 解析响应数据
+      const data = await response.json()
+      const result = {
+        data,
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      }
+
+      // 应用响应拦截器
+      let finalResponse = result
+      for (const interceptor of manager.getResponseInterceptors()) {
+        finalResponse = await interceptor(finalResponse)
+      }
+
+      // 设置缓存
+      if (cacheConfig.enable)
+        manager.setCache(`${baseURL}${url}`, finalResponse, cacheConfig.ttl!)
+
+      return returnData ? finalResponse.data : finalResponse
+    }
+    catch (error: any) {
+      clearTimeout(timeoutId)
+
+      // 处理重试
+      if (
+        retry.enable
+        && retryCount < retry.count!
+        && error.name !== 'AbortError'
+      ) {
+        await new Promise(resolve => setTimeout(resolve, retry.delay))
+        return executeRequest(retryCount + 1)
+      }
+
+      // 创建 RequestError 实例
+      const requestError = error instanceof RequestError
+        ? error
+        : new RequestError(
+          error.message || 'RequestError',
+          error.status,
+          error.response,
+        )
+
+      // 应用错误拦截器
+      for (const interceptor of manager.getErrorInterceptors()) {
+        await interceptor(requestError)
+      }
+
+      throw requestError
+    }
+    finally {
+      // 取消请求
+      if (signal)
+        controller.abort()
+    }
+  }
+
+  // 通过请求管理器执行请求
+  return manager.executeRequest(() => executeRequest())
+}
+
+type HttpBody = BodyInit | Record<string, any> | null
+
+/** 处理请求体和对应的 Content-Type */
+function resolveRequestBody(data?: HttpBody): {
+  body: BodyInit | null
+  contentType?: string
+} {
+  // 如果是 null 或 undefined，直接返回
+  if (!data) {
+    return { body: null }
+  }
+
+  // 如果已经是 BodyInit 类型，直接使用
+  if (
+    data instanceof FormData
+    || data instanceof URLSearchParams
+    || data instanceof Blob
+    || data instanceof ArrayBuffer
+    || data instanceof ReadableStream
+    || typeof data === 'string'
+  ) {
+    return { body: data }
+  }
+
+  // 其他情况（普通对象或数组），转换为 JSON
+  return {
+    body: JSON.stringify(data),
+    contentType: 'application/json',
+  }
+}
+
+/** 处理带请求体的方法（POST、PUT 等） */
+function requestWithBody<T = any>(method: 'POST' | 'PUT', url: string, data?: HttpBody, options?: RequestOptions) {
+  const { body, contentType } = resolveRequestBody(data)
+  const headers = new Headers(options?.headers)
+
+  if (contentType && !headers.has('Content-Type')) {
+    headers.set('Content-Type', contentType)
+  }
+
+  return sendRequest<T>(url, {
+    ...options,
+    headers,
+    method,
+    body,
+  })
+}
+
+function createRequest() {
+  const requestFn = <T = any>(url: string, options?: RequestOptions) => {
+    return sendRequest<T>(url, options)
+  }
+
+  requestFn.get = <T = any>(url: string, options?: RequestOptions) => {
+    return sendRequest<T>(url, { ...options, method: 'GET' })
+  }
+
+  requestFn.post = <T = any>(url: string, data?: HttpBody, options?: RequestOptions) => {
+    return requestWithBody<T>('POST', url, data, options)
+  }
+
+  requestFn.put = <T = any>(url: string, data?: HttpBody, options?: RequestOptions) => {
+    return requestWithBody<T>('PUT', url, data, options)
+  }
+
+  requestFn.delete = <T = any>(url: string, options?: RequestOptions) => {
+    return sendRequest<T>(url, {
+      ...options,
+      method: 'DELETE',
+    })
+  }
+
+  return requestFn
+}
+
+export const request = createRequest()

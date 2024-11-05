@@ -16,31 +16,26 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     },
     "./browser": {
       "types": "./dist/browser.d.ts",
-      "import": "./dist/browser.js",
-      "require": "./dist/browser.cjs"
+      "import": "./dist/browser.js"
     },
     "./node": {
       "types": "./dist/node.d.ts",
-      "import": "./dist/node.js",
-      "require": "./dist/node.cjs"
+      "import": "./dist/node.js"
     },
     "./shared": {
       "types": "./dist/shared.d.ts",
-      "import": "./dist/shared.js",
-      "require": "./dist/shared.cjs"
+      "import": "./dist/shared.js"
     },
     "./upload": {
       "types": "./dist/upload.d.ts",
-      "import": "./dist/upload.js",
-      "require": "./dist/upload.cjs"
+      "import": "./dist/upload.js"
     }
   },
-  "main": "./dist/index.cjs",
+  "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
@@ -51,7 +46,7 @@
     "dist"
   ],
   "engines": {
-    "node": "^18.0.0 || >=20.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "build": "pnpm build-only && pnpm type-dts",

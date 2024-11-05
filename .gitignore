@@ -15,6 +15,7 @@ dist-ssr
 .eslintcache
 
 # Editor directories and files
+.test-server
 .idea
 .DS_Store
 *.suo

@@ -1,186 +1,291 @@
-import { hashWASMMD5 } from './hash'
+import type { ChunkHashResult } from './hash'
+import { pLimit } from '../shared/pLimit'
+import { calculateChunksMD5, calculateChunksMD5WithWorkers, calculateLargeFileMD5, defaultChunkSize } from './hash'
 
-export interface WorkerMessage {
-  file: Blob
-  startChunkIndex: number
-  endChunkIndex: number
-  chunkSize: number
+type UploadedChunk = Pick<ChunkHashResult, 'hash' | 'index'>
+
+interface FileHashOptions {
+  chunkSize?: number
+  /** 并发数 */
+  concurrency?: number
+  /** 重试次数 */
+  retries?: number
+  /** 错误时是否退出 */
+  exitOnError?: boolean
+  /** 哈希进度 */
+  onHashProgress?: (progress: number) => void
+  /** 是否使用 Worker 并行计算哈希 */
+  createWorker?: () => Worker
+  /** 是否使用 Worker 计算整个文件哈希 */
+  createLargeFileHashWorker?: () => Worker
 }
 
-export interface SharedWorkerMessage {
-  index: number
-  chunkStart: number
-  chunkEnd: number
-  blob: Blob
+interface UploadResult extends ChunkHashResult {
+  uploaded: boolean
+  uploadChunkResponse: any
 }
 
-export interface HashResult {
-  index: number
-  chunkStart: number
-  chunkEnd: number
-  hash: string
-  blob: Blob
-}
-
-const defaultChunkSize = 4 * 1024 * 1024
-
-function getChunkBounds(i: number, chunkSize: number, fileSize: number) {
-  const chunkStart = i * chunkSize
-  const chunkEnd = Math.min(chunkStart + chunkSize, fileSize)
-  return { chunkStart, chunkEnd }
-}
-
-/**
- * 分割大文件，计算每个分片的 MD5 值。
- * @param file 文件对象
- * @param chunkSize 分片大小，默认为 4MB
- * @param onChunkHashed 每一个分片计算完成后的回调函数，参数为计算结果
- * @returns Promise，包含每个分片的 MD5 值和原始 Blob 对象
- */
-export async function largeFileHashList(
-  file: Blob,
-  chunkSize = defaultChunkSize,
-  onChunkHashed?: (result: HashResult) => void,
-) {
-  const chunkCount = Math.ceil(file.size / chunkSize)
-  const results: HashResult[] = Array.from({ length: chunkCount })
-
-  for (let i = 0; i < chunkCount; i++) {
-    const { chunkStart, chunkEnd } = getChunkBounds(i, chunkSize, file.size)
-    const blob = file.slice(chunkStart, chunkEnd)
-    const arrayBuffer = await blob.arrayBuffer()
-    const hash = await hashWASMMD5(arrayBuffer)
-    const result = { index: i, chunkStart, chunkEnd, hash, blob }
-    onChunkHashed?.(result)
-    results[i] = result
-  }
-
-  return results
+interface UploadHandlers {
+  /** 获取已上传分片 */
+  getUploadedChunks?: (fileHash: string) => Promise<UploadedChunk[]>
+  /** 上传分片 */
+  uploadChunk: (chunk: ChunkHashResult, fileHash: string) => Promise<any>
+  /** 合并分片 */
+  mergeChunks: (filename: string, fileHash: string, chunks: UploadedChunk[]) => Promise<any>
 }
 
 /**
- * 每个 worker 都会加载 hashWASMMD5 函数，函数依赖了 hash-wasm 库，所以网络不好的情况下可能会比在渲染主线程直接处理更慢
- * 分割大文件，计算每个分片的 MD5 值，使用 Web Worker 并行计算。
- * @param file 文件对象
- * @param createWorker 可以使用 pnpm helpers 默认生成位置参数 [src/worker] 创建一个 worker 实现
- * @param chunkSize 分片大小，默认为 4MB
- * @param onChunkHashed 每一个分片计算完成后的回调函数，参数为计算结果
- * @returns Promise，包含每个分片的 MD5 值和原始 Blob 对象
+ * 创建文件哈希计算流
  */
-export async function largeFileHashWithWorkers(
+export function createFileHashStream(
   file: Blob,
-  createWorker: () => Worker,
-  chunkSize = defaultChunkSize,
-  onChunkHashed?: (result: HashResult[]) => void,
+  options: FileHashOptions & {
+    uploadedChunks?: UploadedChunk[]
+  } = {},
 ) {
-  const concurrency = navigator.hardwareConcurrency || 4
-  const chunkCount = Math.ceil(file.size / chunkSize)
-  const results: HashResult[] = Array.from({ length: chunkCount })
+  const {
+    chunkSize = defaultChunkSize,
+    createWorker,
+    onHashProgress,
+    uploadedChunks = [],
+  } = options
+  const uploadedChunkHashes = uploadedChunks.map(chunk => chunk.hash)
+  const totalChunks = Math.ceil(file.size / chunkSize)
 
-  const workers: Worker[] = Array.from({ length: concurrency }, () => createWorker())
-
-  const workerPromises: Promise<void>[] = workers.map((worker, workerIndex) => {
-    return new Promise<void>((resolve, reject) => {
-      const startChunkIndex = workerIndex * Math.ceil(chunkCount / concurrency)
-      const endChunkIndex = Math.min(startChunkIndex + Math.ceil(chunkCount / concurrency), chunkCount)
-
-      worker.onmessage = (event) => {
-        const workerResults = event.data
-        onChunkHashed?.(workerResults)
-        for (const workerResult of workerResults) {
-          results[workerResult.index] = workerResult
+  return new ReadableStream<ChunkHashResult>({
+    async start(controller) {
+      try {
+        if (createWorker) {
+          await calculateChunksMD5WithWorkers(
+            file,
+            createWorker,
+            {
+              chunkSize,
+              onChunkHashed: (chunks) => {
+                const newChunks = chunks.filter(chunk => !uploadedChunkHashes.includes(chunk.hash))
+                newChunks.forEach(chunk => controller.enqueue(chunk))
+                onHashProgress?.(
+                  (chunks.length / totalChunks) * 100,
+                )
+              },
+            },
+          )
         }
-        resolve()
+        else {
+          await calculateChunksMD5(
+            file,
+            chunkSize,
+            (chunk) => {
+              if (!uploadedChunkHashes.includes(chunk.hash))
+                controller.enqueue(chunk)
+              onHashProgress?.(
+                ((chunk.index + 1) / totalChunks) * 100,
+              )
+            },
+          )
+        }
       }
-
-      worker.onerror = (error) => {
-        console.error(`Worker error: ${error.message}`)
-        reject(error) // Reject the promise on worker error
+      catch (error) {
+        controller.error(error)
       }
-
-      worker.postMessage({
-        file,
-        startChunkIndex,
-        endChunkIndex,
-        chunkSize,
-      } as WorkerMessage)
-    })
+      finally {
+        controller.close()
+      }
+    },
   })
-
-  await Promise.all(workerPromises)
-  return results
 }
-// return new Promise((resolve) => {
-//   const chunkCount = Math.ceil(file.size / chunkSize)
-//   // 为每个 Worker 分配任务
-//   const chunkPerWorker = Math.ceil(chunkCount / concurrency)
-//   let finishCount = 0
-//   const results: ResultType[] = []
-
-//   for (let i = 0; i < concurrency; i++) {
-//     // 计算每个 Worker 处理的起始和结束索引
-//     const start = i * chunkPerWorker
-//     const end = Math.min(start + chunkPerWorker, chunkCount)
-//     // 创建 worker, 分配任务
-//     const worker = new Worker(new URL('./worker/hashWorker.js', import.meta.url), { type: 'module' })
-
-//     worker.onmessage = (e) => {
-//       for (let i = start; i < end; i++) {
-//         results[i] = e.data[i - start]
-//       }
-//       worker.terminate()
-//       finishCount++
-//       if (finishCount === concurrency) {
-//         return resolve(results)
-//       }
-//     }
-
-//     worker.postMessage({ file, start, end, chunkSize })
-//   }
-// })
 
 /**
- * 分割大文件，计算每个分片的 MD5 值，使用 SharedWorker 并行计算。
- * @param file 文件对象
- * @param chunkSize 分片大小，默认为 4MB
- * @param onChunkHashed 每一个分片计算完成后的回调函数，参数为计算结果
- * @returns Promise，包含每个分片的 MD5 值和原始 Blob 对象
+ * 将哈希计算流转换为上传流，支持并发控制
+ * @param uploadChunk 上传分片的处理函数
+ * @param options 配置选项（并发数、重试次数、错误处理）
  */
-// export async function largeFileHashWithSharedWorker(
-//   file: Blob,
-//   chunkSize = defaultChunkSize,
-//   onChunkHashed?: (result: HashResult) => void,
-// ) {
-//   const chunkCount = Math.ceil(file.size / chunkSize)
-//   const results: HashResult[] = Array.from({ length: chunkCount })
+export function hashStreamToUploadStream(
+  uploadChunk: UploadHandlers['uploadChunk'],
+  fileHash: string,
+  options: {
+    concurrency?: number
+    retries?: number
+    exitOnError?: boolean
+  } = {},
+) {
+  // 创建一个具有并发限制的执行器
+  const limitedUpload = pLimit(
+    options.concurrency || 10,
+    options.retries || 0,
+    options.exitOnError ?? true,
+  )
 
-//   const worker = new SharedWorker(new URL('./worker/hashSharedWorker.ts', import.meta.url), { type: 'module' })
+  // 创建一个队列来存储待上传的分片任务
+  const uploadQueue: Promise<UploadResult>[] = []
 
-//   return new Promise<HashResult[]>((resolve, reject) => {
-//     let completedChunks = 0
+  // TransformStream 用于转换数据流
+  return new TransformStream<ChunkHashResult, UploadResult>({
+    // transform 方法在每次收到新的分片数据时被调用
+    // chunk 当前要处理的分片数据（包含哈希值和分片内容）
+    // controller 用于控制输出流的控制器
+    // 执行顺序
+    // 1. transform(chunk1) 进入微任务队列
+    // 2. ├── uploadTask1 开始执行（如果失败 pLimit 内部设置 isAborting = true）
+    // 3. transform(chunk2) 进入微任务队列
+    // 4. └── uploadTask2 直接返回 rejected Promise（因为 isAborting = true）
+    async transform(chunk, controller) {
+      // 创建上传任务并用 pLimit 包装以实现并发控制
+      const uploadTask = limitedUpload(async () => {
+        const uploadChunkResponse = await uploadChunk(chunk, fileHash)
+        return {
+          ...chunk,
+          uploaded: true,
+          uploadChunkResponse,
+        }
+      })
+        .catch((error) => {
+          // 1. 为所有未完成的任务添加错误处理器，这里不写 node 下测试会报错
+          uploadQueue.forEach(task => task.catch(() => {}))
+          // 2. 清空队列
+          uploadQueue.length = 0
+          // 3. 通知错误
+          controller.error(error)
+          throw error
+        })
 
-//     worker.port.onmessage = (event) => {
-//       const workerResult = event.data
-//       results[workerResult.index] = workerResult
+      // 将任务加入队列，不需要在这里处理错误
+      uploadQueue.push(uploadTask)
 
-//       onChunkHashed?.(workerResult)
+      // 当队列长度达到并发限制时，处理一个任务
+      // 内存控制：避免所有任务同时存在于内存中，当队列达到并发上限时，等待并处理一个任务，释放内存空间
+      // 背压（Backpressure）机制：当下游处理较慢时，通过等待处理结果来自动降低上游的处理速度，防止内存中堆积过多的待处理任务
+      if (uploadQueue.length >= (options.concurrency || 10)) {
+        const result = await uploadQueue.shift()
+        controller.enqueue(result)
+      }
+    },
 
-//       completedChunks++
-//       if (completedChunks === chunkCount) {
-//         worker.port.close() // 完成后关闭 port
-//         resolve(results)
-//       }
-//     }
+    // flush 方法在所有数据都已经通过 transform 处理后被调用
+    // 用于处理队列中剩余的任务
+    // controller 用于控制输出流的控制器
+    async flush(controller) {
+      try {
+        // 等待所有剩余的上传任务完成
+        const results = await Promise.all(uploadQueue)
+        // 将所有结果输出到流中
+        results.forEach(result => controller.enqueue(result))
+      }
+      catch (error) {
+        // 通知错误并结束流
+        controller.error(error)
+      }
+    },
+  })
+}
 
-//     // 将每个分片发送给 Worker
-//     const processChunks = async () => {
-//       for (let i = 0; i < chunkCount; i++) {
-//         const { chunkStart, chunkEnd } = getChunkBounds(i, chunkSize, file.size)
-//         const blob = file.slice(chunkStart, chunkEnd)
-//         worker.port.postMessage({ chunkStart, chunkEnd, blob, index: i })
-//       }
-//     }
+/**
+ * 一般通用的文件处理流程。
+ * 文件 -> ReadableStream(分片+哈希)[hashStream]  -> TransformStream(上传)[uploadStream] -> 结果收集[results]
+ */
+export async function uploadFileInChunks(
+  file: File,
+  handlers: UploadHandlers,
+  options: FileHashOptions & {
+    onUploadProgress?: (progress: number) => void
+  } = {},
+) {
+  const {
+    onUploadProgress,
+    concurrency,
+    retries,
+    exitOnError,
+    createLargeFileHashWorker,
+    ...hashOptions
+  } = options
 
-//     processChunks().catch(reject)
-//   })
-// }
+  let hashStream: ReadableStream<ChunkHashResult> | undefined
+  let reader: ReadableStreamDefaultReader<UploadResult> | undefined
+
+  try {
+    // 计算文件哈希
+    const fileHash = await calculateLargeFileMD5(file, {
+      createWorker: createLargeFileHashWorker,
+    })
+    // 获取已上传分片
+    const uploadedChunks = await handlers.getUploadedChunks?.(fileHash) || []
+    // 1. 创建哈希计算流
+    // ReadableStream 用于读取数据，这里用于读取文件分片并计算哈希
+    hashStream = createFileHashStream(file, {
+      ...hashOptions,
+      uploadedChunks,
+    })
+
+    // 2. 转换为上传流并处理结果
+    const results: UploadResult[] = []
+    const totalChunks = Math.ceil(file.size / (options.chunkSize || defaultChunkSize))
+
+    // 使用并发控制的上传流
+    // pipeThrough 用于将一个流传输到另一个转换流中
+    // 这里将哈希计算流传入上传转换流，形成处理管道：文件分片 -> 计算哈希 -> 上传分片
+    const uploadStream = hashStream.pipeThrough(
+      hashStreamToUploadStream(handlers.uploadChunk, fileHash, {
+        concurrency,
+        retries,
+        exitOnError,
+      }),
+    )
+
+    // 获取读取器
+    reader = uploadStream.getReader()
+
+    // 循环读取每个上传结果
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done)
+        break
+
+      results.push(value)
+      onUploadProgress?.(
+        ((results.length + uploadedChunks.length) / totalChunks) * 100,
+      )
+    }
+
+    // 3. 通知服务器合并文件
+    const mergeResult = await handlers.mergeChunks(file.name, fileHash, [
+      ...results.map(result => ({
+        hash: result.hash,
+        index: result.index,
+      })),
+      ...uploadedChunks,
+    ])
+
+    return {
+      uploadedChunks: results,
+      oldUploadedChunks: uploadedChunks,
+      mergeResult,
+    }
+  }
+  catch (error) {
+    throw new Error(`文件处理失败: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  finally {
+    // hashStream -----> TransformStream -----> reader
+    // ^                   |
+    // |                   |
+    // +------- 取消传播 ------+
+    // 先释放读取器的锁
+    try {
+      reader?.releaseLock()
+      // await reader.cancel()
+    }
+    catch (e) {
+      console.warn('释放读取器锁失败:', e)
+    }
+
+    // 再取消流，判断流是否被锁定
+    if (!hashStream?.locked) {
+      try {
+        await hashStream?.cancel()
+      }
+      catch (e) {
+        console.warn('取消哈希流失败:', e)
+      }
+    }
+  }
+}
