@@ -1,3 +1,13 @@
+## 2.0.0 (2024-11-05)
+
+* feat: 新增 request、download、uploadFileInChunks、stream 相关函数 ([1df1d7a](https://github.com/lhvision/helpers/commit/1df1d7a))
+
+
+### BREAKING CHANGE
+
+* 从 2.0 开始移除了 CJS 产物只支持 ESM
+
+
 ## <small>1.0.7 (2024-10-30)</small>
 
 * feat: 调整 upload 作为独立的模块 ([2218cbb](https://github.com/lhvision/helpers/commit/2218cbb))
