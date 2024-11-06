@@ -1,3 +1,9 @@
+## <small>2.0.3 (2024-11-06)</small>
+
+* feat: request 新增直接返回 Response 对象参数 rawResponse 以用于流式下载等场景 ([f778ac2](https://github.com/lhvision/helpers/commit/f778ac2))
+
+
+
 ## <small>2.0.2 (2024-11-06)</small>
 
 * fix: 修复 build 后不该保留的代码注释 ([fc92004](https://github.com/lhvision/helpers/commit/fc92004))
