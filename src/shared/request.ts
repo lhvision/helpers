@@ -26,6 +26,12 @@ interface RequestOptions extends RequestInit {
    * @defaultValue true
    */
   returnData?: boolean
+  /**
+   * 是否直接返回原始 Response 对象
+   * 用于流式下载等场景
+   * @defaultValue false
+   */
+  rawResponse?: boolean
 }
 
 // 统一的响应格式
@@ -261,6 +267,7 @@ async function sendRequest<T = any>(
     retry,
     signal,
     returnData,
+    rawResponse,
     ...fetchOptions
   } = mergedOptions
   const fullUrl = `${baseURL}${url}`
@@ -305,6 +312,11 @@ async function sendRequest<T = any>(
 
       if (!response.ok)
         throw new RequestError(response.statusText, response.status, response as any)
+
+      // 如果需要原始 Response，直接返回
+      if (rawResponse) {
+        return response as unknown as Response<T>
+      }
 
       // 解析响应数据
       const data = await response.json()
@@ -356,11 +368,6 @@ async function sendRequest<T = any>(
       }
 
       throw requestError
-    }
-    finally {
-      // 取消请求
-      if (signal)
-        controller.abort()
     }
   }
 

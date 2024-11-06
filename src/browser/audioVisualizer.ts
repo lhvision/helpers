@@ -247,7 +247,12 @@ export class AudioVisualizer {
 
   /** 预计算条形图位置 */
   private calculateBarPositions(canvasWidth: number) {
-    const cacheKey = `${canvasWidth}-${this.config.segments}-${this.config.barMarginRatio}-${this.config.barWidthRatio}-${this.config.barGapRatio}`
+    // const cacheKey = `${canvasWidth}-${this.config.segments}-${this.config.barMarginRatio}-${this.config.barWidthRatio}-${this.config.barGapRatio}`
+    const w = Math.round(canvasWidth)
+    const m = Math.round(this.config.barMarginRatio * 100)
+    const bw = Math.round(this.config.barWidthRatio * 100)
+    const bg = Math.round(this.config.barGapRatio * 100)
+    const cacheKey = `${w}-${this.config.segments}-${m}-${bw}-${bg}`
     const cached = this.cache.barPositions.get(cacheKey)
     if (cached)
       return cached
@@ -582,7 +587,8 @@ export class AudioVisualizer {
 
   /** 创建颜色渐变 */
   private createGradient(i: number, amplitude: number, segments: number) {
-    const cacheKey = `${i}-${amplitude.toFixed(3)}-${segments}`
+    const amp = Math.round(amplitude * 1000)
+    const cacheKey = `${i}-${amp}-${segments}`
     const cached = this.cache.gradients.get(cacheKey)
     if (cached)
       return cached
@@ -710,6 +716,12 @@ export class AudioVisualizer {
   private createDynamicGlow(centerX: number, centerY: number, radius: number) {
     // 计算时间
     const time = Date.now() * this.config.pulseSpeed
+    const cx = Math.round(centerX * 10)
+    const cy = Math.round(centerY * 10)
+    const cacheKey = `dynamic-glow-${cx}-${cy}`
+    const cached = this.cache.backgroundGradient.get(cacheKey)
+    if (cached)
+      return cached
     // 创建径向渐变
     const glowGradient = this.ctx.createRadialGradient(
       centerX,
@@ -724,6 +736,7 @@ export class AudioVisualizer {
     glowGradient.addColorStop(0.5, `rgba(128, 128, 255, ${0.05 + this.getCachedSin(time) * 0.02})`)
     glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
     // 返回动态光晕
+    this.cache.backgroundGradient.set(cacheKey, glowGradient)
     return glowGradient
   }
 
@@ -752,7 +765,6 @@ export class AudioVisualizer {
   /** 计算圆形上的点 */
   private getCircularPoint(centerX: number, centerY: number, radius: number, angle: number): [number, number] {
     // 减少精度以提高缓存命中率，同时保持视觉效果
-    // const cacheKey = `${centerX.toFixed(0)}-${centerY.toFixed(0)}-${radius.toFixed(1)}-${angle.toFixed(3)}`
     const cx = Math.round(centerX)
     const cy = Math.round(centerY)
     const r = Math.round(radius * 10) // 保留一位小数的精度
@@ -869,7 +881,9 @@ export class AudioVisualizer {
     this.setGlowEffect('rgba(255, 255, 255, 0.9)', amplitude)
 
     // 创建缓存键
-    const cacheKey = `bar-${x.toFixed(0)}-${width.toFixed(0)}`
+    const bx = Math.round(x)
+    const bw = Math.round(width)
+    const cacheKey = `bar-${bx}-${bw}`
     let gradients = this.cache.monochromeGradients.get(cacheKey)
 
     if (!gradients?.barGradient) {
@@ -915,8 +929,11 @@ export class AudioVisualizer {
     const rightX1 = x1 - cosPerp * halfWidth
     const rightY1 = y1 - sinPerp * halfWidth
 
-    // 创建缓存键
-    const cacheKey = `line-${leftX1.toFixed(1)}-${leftY1.toFixed(1)}-${rightX1.toFixed(1)}-${rightY1.toFixed(1)}`
+    const lx1 = Math.round(leftX1 * 10)
+    const ly1 = Math.round(leftY1 * 10)
+    const rx1 = Math.round(rightX1 * 10)
+    const ry1 = Math.round(rightY1 * 10)
+    const cacheKey = `line-${lx1}-${ly1}-${rx1}-${ry1}`
     let gradients = this.cache.monochromeGradients.get(cacheKey)
 
     if (!gradients?.lineGradient) {
@@ -950,7 +967,10 @@ export class AudioVisualizer {
     this.ctx.fill()
 
     // 端点渐变缓存键
-    const endPointCacheKey = `endpoint-${x2.toFixed(1)}-${y2.toFixed(1)}-${lineWidth.toFixed(1)}`
+    const ex2 = Math.round(x2 * 10)
+    const ey2 = Math.round(y2 * 10)
+    const lw = Math.round(lineWidth * 10)
+    const endPointCacheKey = `endpoint-${ex2}-${ey2}-${lw}`
     let endPointGradients = this.cache.monochromeGradients.get(endPointCacheKey)
 
     if (!endPointGradients?.endPointGradient) {
@@ -969,8 +989,11 @@ export class AudioVisualizer {
     this.ctx.fill()
   }
 
+  /** 获取缓存的 atan2 值 */
   private getCachedAtan2(y: number, x: number): number {
-    const key = `${x.toFixed(3)}-${y.toFixed(3)}`
+    const kx = Math.round(x * 1000)
+    const ky = Math.round(y * 1000)
+    const key = `${kx}-${ky}`
     let value = this.cache.trigCache.atan2.get(key)
     if (value === undefined) {
       value = Math.atan2(y, x)
