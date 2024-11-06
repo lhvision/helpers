@@ -1,3 +1,9 @@
+## <small>2.0.1 (2024-11-06)</small>
+
+* feat: 调整 request 拦截器现在可以为不同的域名注册拦截器或者默认的拦截器，新增 audio 频谱图生成函数 ([0aa8337](https://github.com/lhvision/helpers/commit/0aa8337))
+
+
+
 ## 2.0.0 (2024-11-05)
 
 * feat: 新增 request、download、uploadFileInChunks、stream 相关函数 ([1df1d7a](https://github.com/lhvision/helpers/commit/1df1d7a))
