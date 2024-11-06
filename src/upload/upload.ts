@@ -120,15 +120,20 @@ export function hashStreamToUploadStream(
   const uploadQueue: Promise<UploadResult>[] = []
 
   // TransformStream 用于转换数据流
+
+  // transform 方法在每次收到新的分片数据时被调用
+  // chunk 当前要处理的分片数据（包含哈希值和分片内容）
+  // controller 用于控制输出流的控制器
+  // 执行顺序
+  // 1. transform(chunk1) 进入微任务队列
+  // 2. ├── uploadTask1 开始执行（如果失败 pLimit 内部设置 isAborting = true）
+  // 3. transform(chunk2) 进入微任务队列
+  // 4. └── uploadTask2 直接返回 rejected Promise（因为 isAborting = true）
+
+  // flush 方法在所有数据都已经通过 transform 处理后被调用
+  // 用于处理队列中剩余的任务
+  // controller 用于控制输出流的控制器
   return new TransformStream<ChunkHashResult, UploadResult>({
-    // transform 方法在每次收到新的分片数据时被调用
-    // chunk 当前要处理的分片数据（包含哈希值和分片内容）
-    // controller 用于控制输出流的控制器
-    // 执行顺序
-    // 1. transform(chunk1) 进入微任务队列
-    // 2. ├── uploadTask1 开始执行（如果失败 pLimit 内部设置 isAborting = true）
-    // 3. transform(chunk2) 进入微任务队列
-    // 4. └── uploadTask2 直接返回 rejected Promise（因为 isAborting = true）
     async transform(chunk, controller) {
       // 创建上传任务并用 pLimit 包装以实现并发控制
       const uploadTask = limitedUpload(async () => {
@@ -161,9 +166,6 @@ export function hashStreamToUploadStream(
       }
     },
 
-    // flush 方法在所有数据都已经通过 transform 处理后被调用
-    // 用于处理队列中剩余的任务
-    // controller 用于控制输出流的控制器
     async flush(controller) {
       try {
         // 等待所有剩余的上传任务完成

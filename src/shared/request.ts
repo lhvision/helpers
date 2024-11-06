@@ -106,18 +106,18 @@ class InterceptorRegistry {
   private interceptorMap = new Map<string, InterceptorGroup>()
   private defaultGroup: InterceptorGroup | null = null
 
-  // 注册拦截器组
+  /** 注册拦截器组 */
   register(domain: string, group: Partial<InterceptorGroup>) {
     const existing = this.interceptorMap.get(domain) || {}
     this.interceptorMap.set(domain, { ...existing, ...group })
   }
 
-  // 设置默认拦截器组
+  /** 设置默认拦截器组 */
   setDefault(group: Partial<InterceptorGroup>) {
     this.defaultGroup = { ...this.defaultGroup, ...group }
   }
 
-  // 获取特定域名的拦截器组
+  /** 获取特定域名的拦截器组 */
   getInterceptors(url: string): InterceptorGroup {
     const domain = this.extractDomain(url)
     return {
@@ -174,36 +174,6 @@ export class RequestManager {
   getInterceptors(url: string) {
     return this.interceptorRegistry.getInterceptors(url)
   }
-
-  // /** 获取请求拦截器 */
-  // getRequestInterceptors() {
-  //   return this.interceptors.request
-  // }
-
-  // /** 获取响应拦截器 */
-  // getResponseInterceptors() {
-  //   return this.interceptors.response
-  // }
-
-  // /** 获取错误拦截器 */
-  // getErrorInterceptors() {
-  //   return this.interceptors.error
-  // }
-
-  // /** 添加请求拦截器 */
-  // addRequestInterceptor(interceptor: RequestInterceptor) {
-  //   this.interceptors.request.push(interceptor)
-  // }
-
-  // /** 添加响应拦截器 */
-  // addResponseInterceptor(interceptor: ResponseInterceptor) {
-  //   this.interceptors.response.push(interceptor)
-  // }
-
-  // /** 添加错误拦截器 */
-  // addErrorInterceptor(interceptor: ErrorInterceptor) {
-  //   this.interceptors.error.push(interceptor)
-  // }
 
   /** 设置缓存 */
   setCache(key: string, data: any, ttl: number) {
@@ -311,9 +281,6 @@ async function sendRequest<T = any>(
   if (interceptors.request) {
     finalOptions = await interceptors.request(finalOptions)
   }
-  // for (const interceptor of manager.getRequestInterceptors()) {
-  //   finalOptions = await interceptor(finalOptions)
-  // }
 
   // 创建用于超时控制的 AbortController
   const timeoutController = new AbortController()
@@ -331,7 +298,7 @@ async function sendRequest<T = any>(
     try {
       const response = await fetch(fullUrl, {
         ...finalOptions,
-        signal: controller.signal, // 使用组合后的 signal
+        signal: controller.signal,
       })
 
       clearTimeout(timeoutId)
@@ -353,9 +320,6 @@ async function sendRequest<T = any>(
       if (interceptors.response) {
         finalResponse = await interceptors.response(finalResponse)
       }
-      // for (const interceptor of manager.getResponseInterceptors()) {
-      //   finalResponse = await interceptor(finalResponse)
-      // }
 
       // 设置缓存
       if (cacheConfig?.enable)
@@ -390,9 +354,6 @@ async function sendRequest<T = any>(
       if (interceptors.error) {
         await interceptors.error(requestError)
       }
-      // for (const interceptor of manager.getErrorInterceptors()) {
-      //   await interceptor(requestError)
-      // }
 
       throw requestError
     }

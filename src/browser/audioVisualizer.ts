@@ -2,11 +2,14 @@ type VisualizerMode = 'bar' | 'circular'
 
 // 可视化器配置接口
 interface VisualizerConfig {
-  /** 频谱分段数 */
+  /**
+   * 频谱分段数
+   * @defaultValue 120
+   */
   segments?: number
-  /** 基础透明度 */
+  /** 基础透明度，范围：0-1 */
   baseOpacity?: number
-  /** 发光强度 */
+  /** 发光强度，范围：0-1 */
   glowIntensity?: number
   /** 阴影模糊值 */
   shadowBlur?: number
@@ -25,25 +28,25 @@ interface VisualizerConfig {
    * @defaultValue 0.03
    */
   pulseIntensity?: number
-  /** 高度倍数 */
+  /** 高度倍数，范围：0-1 */
   heightMultiplier?: number
-  /** 条形宽度比例 */
+  /** 条形宽度比例，范围：0-1 */
   barWidthRatio?: number
-  /** 条形间隙比例 */
+  /** 条形间隙比例，范围：0-1 */
   barGapRatio?: number
-  /** 圆形半径比例 */
+  /** 圆形半径比例，范围：0-1 */
   circleRadiusRatio?: number
   /** 参考圆环数 */
   referenceCircles?: number
   /** 是否启用鼠标交互 */
   enableMouseInteraction?: boolean
-  /** 条形图边距比例 */
+  /** 条形图边距比例，范围：0-1 */
   barMarginRatio?: number
-  /** 条形图高度基础比例 */
+  /** 条形图高度基础比例，范围：0-1 */
   barHeightRatio?: number
-  /** 圆形频谱线条长度比例 */
+  /** 圆形频谱线条长度比例，范围：0-1 */
   circularBarHeightRatio?: number
-  /** 圆形频谱强度系数 */
+  /** 圆形频谱强度系数，范围：0-1 */
   circularIntensityRatio?: number
   /** 是否使用单色透明效果 */
   useMonochrome?: boolean
@@ -87,6 +90,11 @@ export class AudioVisualizer {
   private audioContext: AudioContext | null = null
   /** 分析器 */
   private analyser: AnalyserNode | null = null
+  /**
+   * 频谱FFT大小
+   * @defaultValue 256
+   */
+  private fftSize: number
   /** 画布 */
   private canvas: HTMLCanvasElement
   /** 画布上下文 */
@@ -101,29 +109,28 @@ export class AudioVisualizer {
   private mouseX?: number
   /** 鼠标Y坐标 */
   private mouseY?: number
-
-  // 可配置参数，使用私有属性存储默认值
+  /** 可配置参数 */
   private config: Required<VisualizerConfig> = {
-    segments: 120, // 分段数
-    baseOpacity: 0.3, // 基础透明度
-    glowIntensity: 0.7, // 发光强度
-    shadowBlur: 15, // 阴影模糊值
-    pulseSpeed: 0.001, // 脉冲速度，单位：毫秒的倒数（ms⁻¹）
-    pulseIntensity: 0.03, // 脉冲强度
-    heightMultiplier: 0.7, // 70% 的高度倍数
-    barWidthRatio: 0.6, // 60% 的条形宽度比例
-    barGapRatio: 0.4, // 40% 的条形间隙比例
-    circleRadiusRatio: 0.45, // 45% 的圆形半径比例
-    referenceCircles: 4, // 参考圆环数
-    enableMouseInteraction: false, // 是否启用鼠标交互
-    barMarginRatio: 0.05, // 5% 的边距
-    barHeightRatio: 0.7, // 70% 的画布高度
-    circularBarHeightRatio: 0.8, // 80% 的基础半径
-    circularIntensityRatio: 0.3, // 30% 的强度系数
-    useMonochrome: false, // 默认不使用单色透明效果
+    segments: 120,
+    baseOpacity: 0.3,
+    glowIntensity: 0.7,
+    shadowBlur: 15,
+    pulseSpeed: 0.001,
+    pulseIntensity: 0.03,
+    heightMultiplier: 0.7,
+    barWidthRatio: 0.6,
+    barGapRatio: 0.4,
+    circleRadiusRatio: 0.45,
+    referenceCircles: 4,
+    enableMouseInteraction: false,
+    barMarginRatio: 0.05,
+    barHeightRatio: 0.7,
+    circularBarHeightRatio: 0.8,
+    circularIntensityRatio: 0.3,
+    useMonochrome: false,
   }
 
-  // 添加缓存存储
+  /** 缓存存储 */
   private cache: CacheStore = {
     gradients: new Map(),
     dynamicEffects: new Map(),
@@ -139,10 +146,10 @@ export class AudioVisualizer {
     monochromeGradients: new Map(),
   }
 
-  // 添加防抖计时器
+  /** 防抖计时器 */
   private resizeTimer?: number
 
-  // 添加缓存属性存储画布尺寸
+  /** 画布尺寸 */
   private canvasSize = {
     width: 0,
     height: 0,
@@ -151,9 +158,16 @@ export class AudioVisualizer {
     dirty: true,
   }
 
-  constructor(audioElement: HTMLAudioElement, canvas: HTMLCanvasElement) {
+  /**
+   * 构造函数
+   * @param audioElement 音频元素
+   * @param canvas 画布
+   * @param fftSize 频谱 FFT 大小，默认 256，必须是 2 的幂次方，决定了频率数据的精度
+   */
+  constructor(audioElement: HTMLAudioElement, canvas: HTMLCanvasElement, fftSize = 256) {
     this.audioElement = audioElement
     this.canvas = canvas
+    this.fftSize = fftSize
     this.ctx = canvas.getContext('2d', { alpha: true })!
     this.setupMouseEvents()
 
@@ -184,7 +198,7 @@ export class AudioVisualizer {
     this.analyser.connect(this.audioContext.destination)
 
     // 设置分析器FFT大小，必须是2的幂次方，决定了频率数据的精度
-    this.analyser.fftSize = 256
+    this.analyser.fftSize = this.fftSize
     // 获取频谱数据数组长度
     const bufferLength = this.analyser.frequencyBinCount
     // 创建频谱数据数组
@@ -251,10 +265,10 @@ export class AudioVisualizer {
       segmentWidth * 0.99,
     )
 
-    // 计算实际的间隙，确保不会导致溢出
+    // 计算实际的间隙，确保不会导致溢出，确保间隙不会超过剩余空间
     const gap = Math.min(
       barWidth * this.config.barGapRatio,
-      (segmentWidth - barWidth), // 确保间隙不会超过剩余空间
+      (segmentWidth - barWidth),
     )
 
     // 创建条形位置数组
@@ -654,12 +668,10 @@ export class AudioVisualizer {
     if (cached)
       return cached
 
-    // 创建结果
+    // 创建结果,计算高度倍数 heightMultiplier, 计算脉冲效果 pulseEffect
     const result = {
-      // 计算高度倍数
       heightMultiplier: this.config.heightMultiplier
         + (this.getCachedSin((i / segments) * Math.PI) * this.config.circularIntensityRatio),
-      // 计算脉冲效果
       pulseEffect: 1 + this.getCachedSin(Date.now() * this.config.pulseSpeed) * this.config.pulseIntensity,
     }
 
@@ -851,7 +863,7 @@ export class AudioVisualizer {
       this.cache.trigCache.atan2.clear()
   }
 
-  // 用于条形图的渐变效果
+  /** 用于条形图的单色渐变效果 */
   private drawMonochromeBarGradient(x: number, y: number, width: number, height: number, amplitude: number) {
     // 设置发光效果
     this.setGlowEffect('rgba(255, 255, 255, 0.9)', amplitude)
@@ -882,7 +894,7 @@ export class AudioVisualizer {
     this.ctx.fillRect(x, y, width, topHeight)
   }
 
-  // 用于圆形图的渐变效果
+  /** 用于圆形图的单色渐变效果 */
   private drawMonochromeLineGradient(x1: number, y1: number, x2: number, y2: number, amplitude: number, lineWidth: number, halfWidth: number) {
     if (amplitude < 0.001)
       return
