@@ -1,3 +1,9 @@
+## <small>2.0.2 (2024-11-06)</small>
+
+* fix: 修复 build 后不该保留的代码注释 ([fc92004](https://github.com/lhvision/helpers/commit/fc92004))
+
+
+
 ## <small>2.0.1 (2024-11-06)</small>
 
 * feat: 调整 request 拦截器现在可以为不同的域名注册拦截器或者默认的拦截器，新增 audio 频谱图生成函数 ([0aa8337](https://github.com/lhvision/helpers/commit/0aa8337))
