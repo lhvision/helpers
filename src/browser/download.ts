@@ -27,11 +27,10 @@ export function downloadBlob(content: string | Blob, filename?: string): void {
 
 /**
  * 使用流式方式下载文件
- * @param url 下载地址
+ * @param response fetch Response 对象
  * @param filename 保存的文件名
  */
-export async function streamDownload(url: string, filename?: string) {
-  const response = await fetch(url)
+export async function streamDownload(response: Response, filename?: string) {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)
   }
@@ -46,16 +45,15 @@ export async function streamDownload(url: string, filename?: string) {
 
 /**
  * 带进度的文件下载函数
- * @param url 下载地址
+ * @param response fetch Response 对象
  * @param onProgress 下载进度回调函数，参数为当前下载进度(0-100)
  * @param filename 可选的文件名
  */
 export async function downloadWithProgress(
-  url: string,
+  response: Response,
   onProgress: (progress: number) => void,
   filename?: string,
 ) {
-  const response = await fetch(url)
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)
   }

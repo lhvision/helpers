@@ -180,7 +180,7 @@ export function hashStreamToUploadStream(
 }
 
 /**
- * 一般通用的文件处理流程。
+ * 通用的文件分片上传处理流程。
  * 文件 -> ReadableStream(分片+哈希)[hashStream]  -> TransformStream(上传)[uploadStream] -> 结果收集[results]
  */
 export async function uploadFileInChunks(

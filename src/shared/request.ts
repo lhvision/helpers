@@ -4,7 +4,10 @@ type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 interface RequestOptions extends RequestInit {
   /** 基础URL，会与请求URL拼接 */
   baseURL?: string
-  /** 超时时间（毫秒） */
+  /**
+   * 超时时间（毫秒）
+   * @defaultValue 30 分钟
+   */
   timeout?: number
   /** 缓存配置 */
   cacheConfig?: CacheConfig
@@ -46,9 +49,11 @@ class RequestError extends Error {
     public status?: number,
     /** 响应 */
     public response?: Response,
+    /** 错误名称 */
+    public errorName?: string,
   ) {
     super(message)
-    this.name = 'RequestError'
+    this.name = errorName || 'RequestError'
   }
 }
 
@@ -57,23 +62,13 @@ type RequestInterceptor = (config: RequestOptions) => RequestOptions | Promise<R
 type ResponseInterceptor = (response: Response) => Response | Promise<Response>
 type ErrorInterceptor = (error: RequestError) => any
 
-// 拦截器接口
-interface Interceptors {
-  /** 请求拦截器数组 */
-  request: RequestInterceptor[]
-  /** 响应拦截器数组 */
-  response: ResponseInterceptor[]
-  /** 错误拦截器数组 */
-  error: ErrorInterceptor[]
-}
-
 // 缓存接口
 interface CacheConfig {
   /** 是否启用缓存 */
   enable?: boolean
   /**
    * 缓存时间（毫秒）
-   * @defaultValue 5 * 60 * 1000
+   * @defaultValue 5 分钟
    */
   ttl?: number
   /** 自定义缓存键 */
@@ -96,26 +91,62 @@ interface RetryConfig {
   delay?: number
 }
 
+// 定义拦截器组的类型
+interface InterceptorGroup {
+  /** 请求拦截器 */
+  request?: RequestInterceptor
+  /** 响应拦截器 */
+  response?: ResponseInterceptor
+  /** 错误拦截器 */
+  error?: ErrorInterceptor
+}
+
+// 拦截器注册器类
+class InterceptorRegistry {
+  private interceptorMap = new Map<string, InterceptorGroup>()
+  private defaultGroup: InterceptorGroup | null = null
+
+  // 注册拦截器组
+  register(domain: string, group: Partial<InterceptorGroup>) {
+    const existing = this.interceptorMap.get(domain) || {}
+    this.interceptorMap.set(domain, { ...existing, ...group })
+  }
+
+  // 设置默认拦截器组
+  setDefault(group: Partial<InterceptorGroup>) {
+    this.defaultGroup = { ...this.defaultGroup, ...group }
+  }
+
+  // 获取特定域名的拦截器组
+  getInterceptors(url: string): InterceptorGroup {
+    const domain = this.extractDomain(url)
+    return {
+      ...this.defaultGroup,
+      ...this.interceptorMap.get(domain),
+    } as InterceptorGroup
+  }
+
+  private extractDomain(url: string): string {
+    try {
+      const urlObj = new URL(url)
+      return urlObj.hostname
+    }
+    catch {
+      return url
+    }
+  }
+}
+
 // 请求管理器类 - 使用单例模式
 export class RequestManager {
   /** 单例实例 */
   private static instance: RequestManager
-  /** 拦截器 */
-  private interceptors: Interceptors = {
-    /** 请求拦截器数组 */
-    request: [],
-    /** 响应拦截器数组 */
-    response: [],
-    /** 错误拦截器数组 */
-    error: [],
-  }
-
+  /** 拦截器注册器 */
+  private interceptorRegistry = new InterceptorRegistry()
   /** 缓存存储，使用 Map 结构存储请求结果 */
   private cache = new Map<string, { data: any, timestamp: number }>()
-
-  // 并发控制相关属性
   /** 最大同时进行的请求数 */
-  private maxConcurrent = 5
+  private maxConcurrent?: number
   /** 当前正在处理的请求数 */
   private currentRequests = 0
   /** 等待队列 */
@@ -129,35 +160,50 @@ export class RequestManager {
     return RequestManager.instance
   }
 
-  /** 获取请求拦截器 */
-  getRequestInterceptors() {
-    return this.interceptors.request
+  /** 注册域名特定的拦截器组 */
+  registerInterceptors(domain: string, group: InterceptorGroup) {
+    this.interceptorRegistry.register(domain, group)
   }
 
-  /** 获取响应拦截器 */
-  getResponseInterceptors() {
-    return this.interceptors.response
+  /** 设置默认拦截器组 */
+  setDefaultInterceptors(group: InterceptorGroup) {
+    this.interceptorRegistry.setDefault(group)
   }
 
-  /** 获取错误拦截器 */
-  getErrorInterceptors() {
-    return this.interceptors.error
+  /** 获取特定 URL 的拦截器组 */
+  getInterceptors(url: string) {
+    return this.interceptorRegistry.getInterceptors(url)
   }
 
-  /** 添加请求拦截器 */
-  addRequestInterceptor(interceptor: RequestInterceptor) {
-    this.interceptors.request.push(interceptor)
-  }
+  // /** 获取请求拦截器 */
+  // getRequestInterceptors() {
+  //   return this.interceptors.request
+  // }
 
-  /** 添加响应拦截器 */
-  addResponseInterceptor(interceptor: ResponseInterceptor) {
-    this.interceptors.response.push(interceptor)
-  }
+  // /** 获取响应拦截器 */
+  // getResponseInterceptors() {
+  //   return this.interceptors.response
+  // }
 
-  /** 添加错误拦截器 */
-  addErrorInterceptor(interceptor: ErrorInterceptor) {
-    this.interceptors.error.push(interceptor)
-  }
+  // /** 获取错误拦截器 */
+  // getErrorInterceptors() {
+  //   return this.interceptors.error
+  // }
+
+  // /** 添加请求拦截器 */
+  // addRequestInterceptor(interceptor: RequestInterceptor) {
+  //   this.interceptors.request.push(interceptor)
+  // }
+
+  // /** 添加响应拦截器 */
+  // addResponseInterceptor(interceptor: ResponseInterceptor) {
+  //   this.interceptors.response.push(interceptor)
+  // }
+
+  // /** 添加错误拦截器 */
+  // addErrorInterceptor(interceptor: ErrorInterceptor) {
+  //   this.interceptors.error.push(interceptor)
+  // }
 
   /** 设置缓存 */
   setCache(key: string, data: any, ttl: number) {
@@ -184,10 +230,18 @@ export class RequestManager {
     this.cache.clear()
   }
 
+  /** 设置最大并发数 */
+  setMaxConcurrent(maxConcurrent: number) {
+    this.maxConcurrent = maxConcurrent
+  }
+
   /** 请求执行方法 - 并发控制 */
   async executeRequest<T>(
     request: () => Promise<T>,
   ): Promise<T> {
+    if (!this.maxConcurrent) {
+      return await request()
+    }
     // 如果当前请求数达到上限，加入等待队列
     if (this.currentRequests >= this.maxConcurrent) {
       return new Promise((resolve) => {
@@ -201,8 +255,7 @@ export class RequestManager {
     // 执行请求
     this.currentRequests++
     try {
-      const result = await request()
-      return result
+      return await request()
     }
     finally {
       this.currentRequests--
@@ -215,36 +268,52 @@ export class RequestManager {
   }
 }
 
+const defaultRequestOptions: RequestOptions = {
+  baseURL: '',
+  timeout: 30 * 60 * 1000,
+  cacheConfig: { enable: false, ttl: 5 * 60 * 1000 },
+  retry: { enable: false, count: 3, delay: 1000 },
+  returnData: true,
+}
+
 async function sendRequest<T = any>(
   url: string,
   options: RequestOptions = {},
 ): Promise<Response<T>> {
   // 获取请求管理器实例
   const manager = RequestManager.getInstance()
-  // 解构合并后的配置
+  // 合并默认配置
+  const mergedOptions = { ...defaultRequestOptions, ...options }
   const {
-    baseURL = '',
-    timeout = 10000,
-    cacheConfig = { enable: false, ttl: 5 * 60 * 1000 },
-    retry = { enable: false, count: 3, delay: 1000 },
+    baseURL,
+    timeout,
+    cacheConfig,
+    retry,
     signal,
-    returnData = true,
+    returnData,
     ...fetchOptions
-  } = options
+  } = mergedOptions
+  const fullUrl = `${baseURL}${url}`
 
   // 检查缓存
-  if (cacheConfig.enable) {
+  if (cacheConfig?.enable) {
     const cacheKey = cacheConfig.key || `${baseURL}${url}`
     const cachedData = manager.getCache(cacheKey)
     if (cachedData)
       return cachedData
   }
 
+  // 获取该 URL 对应的拦截器组
+  const interceptors = manager.getInterceptors(fullUrl)
+
   // 应用请求拦截器
-  let finalOptions = fetchOptions
-  for (const interceptor of manager.getRequestInterceptors()) {
-    finalOptions = await interceptor(finalOptions as RequestOptions)
+  let finalOptions = { ...fetchOptions }
+  if (interceptors.request) {
+    finalOptions = await interceptors.request(finalOptions)
   }
+  // for (const interceptor of manager.getRequestInterceptors()) {
+  //   finalOptions = await interceptor(finalOptions)
+  // }
 
   // 创建用于超时控制的 AbortController
   const timeoutController = new AbortController()
@@ -260,7 +329,7 @@ async function sendRequest<T = any>(
   // 执行请求的核心方法
   const executeRequest = async (retryCount = 0): Promise<Response<T>> => {
     try {
-      const response = await fetch(`${baseURL}${url}`, {
+      const response = await fetch(fullUrl, {
         ...finalOptions,
         signal: controller.signal, // 使用组合后的 signal
       })
@@ -281,12 +350,15 @@ async function sendRequest<T = any>(
 
       // 应用响应拦截器
       let finalResponse = result
-      for (const interceptor of manager.getResponseInterceptors()) {
-        finalResponse = await interceptor(finalResponse)
+      if (interceptors.response) {
+        finalResponse = await interceptors.response(finalResponse)
       }
+      // for (const interceptor of manager.getResponseInterceptors()) {
+      //   finalResponse = await interceptor(finalResponse)
+      // }
 
       // 设置缓存
-      if (cacheConfig.enable)
+      if (cacheConfig?.enable)
         manager.setCache(`${baseURL}${url}`, finalResponse, cacheConfig.ttl!)
 
       return returnData ? finalResponse.data : finalResponse
@@ -296,7 +368,7 @@ async function sendRequest<T = any>(
 
       // 处理重试
       if (
-        retry.enable
+        retry?.enable
         && retryCount < retry.count!
         && error.name !== 'AbortError'
       ) {
@@ -311,12 +383,16 @@ async function sendRequest<T = any>(
           error.message || 'RequestError',
           error.status,
           error.response,
+          error.name,
         )
 
       // 应用错误拦截器
-      for (const interceptor of manager.getErrorInterceptors()) {
-        await interceptor(requestError)
+      if (interceptors.error) {
+        await interceptors.error(requestError)
       }
+      // for (const interceptor of manager.getErrorInterceptors()) {
+      //   await interceptor(requestError)
+      // }
 
       throw requestError
     }
@@ -406,4 +482,14 @@ function createRequest() {
   return requestFn
 }
 
+/**
+ * 依赖于 fetch 的请求函数，RequestManager 单例管理，功能包含：
+ * 1. 并发控制，默认不做限制，可以使用 RequestManager.setMaxConcurrent 设置最大并发数
+ * 2. 支持配置缓存
+ * 3. 可以设置默认的以及为不同的域名设置不同的请求拦截器、响应拦截器、错误拦截器，单独的拦截器优先级高于默认的拦截器
+ * 4. request.post 与 request.put 方法已支持自动转换请求体和添加 Content-Type: application/json
+ * 5. 支持重试
+ * 6. 支持手动取消请求
+ * 7. 支持配置超时自动取消请求，默认 30 分钟
+ */
 export const request = createRequest()

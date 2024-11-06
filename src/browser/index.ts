@@ -1,3 +1,4 @@
+export * from './audioVisualizer'
 export * from './download'
 export * from './fullScreen'
 export * from './stream'

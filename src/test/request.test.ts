@@ -29,13 +29,15 @@ describe('请求模块测试', () => {
     const responseInterceptor = (response: any) => response
     const errorInterceptor = (error: any) => error
 
-    manager.addRequestInterceptor(requestInterceptor)
-    manager.addResponseInterceptor(responseInterceptor)
-    manager.addErrorInterceptor(errorInterceptor)
+    manager.registerInterceptors('test', {
+      request: requestInterceptor,
+      response: responseInterceptor,
+      error: errorInterceptor,
+    })
 
-    expect(manager.getRequestInterceptors()).toContain(requestInterceptor)
-    expect(manager.getResponseInterceptors()).toContain(responseInterceptor)
-    expect(manager.getErrorInterceptors()).toContain(errorInterceptor)
+    expect(manager.getInterceptors('test').request).toBe(requestInterceptor)
+    expect(manager.getInterceptors('test').response).toBe(responseInterceptor)
+    expect(manager.getInterceptors('test').error).toBe(errorInterceptor)
   })
 
   it('request 函数应该能成功发送GET请求', async () => {
@@ -207,14 +209,16 @@ describe('请求模块测试', () => {
     })
 
     // 添加请求拦截器
-    manager.addRequestInterceptor((config: any) => {
-      return {
-        ...config,
-        headers: {
-          ...config.headers,
-          'X-Test': 'test-value',
-        },
-      }
+    manager.registerInterceptors('api.example.com', {
+      request: (config: any) => {
+        return {
+          ...config,
+          headers: {
+            ...config.headers,
+            'X-Test': 'test-value',
+          },
+        }
+      },
     })
 
     await request('https://api.example.com/test')
@@ -235,9 +239,11 @@ describe('请求模块测试', () => {
     globalThis.fetch = vi.fn().mockRejectedValue(mockError)
 
     let interceptedError: Error | null = null
-    manager.addErrorInterceptor((error: Error) => {
-      interceptedError = error
-      throw error
+    manager.registerInterceptors('api.example.com', {
+      error: (error: Error) => {
+        interceptedError = error
+        throw error
+      },
     })
 
     await expect(request('https://api.example.com/test')).rejects.toThrow()

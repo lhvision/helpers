@@ -76,22 +76,25 @@ describe('下载函数测试', () => {
 
   describe('streamDownload', () => {
     it('应该处理流式下载', async () => {
-      const mockResponse = new Response(new Blob(['test content']))
-      globalThis.fetch = vi.fn().mockResolvedValue(mockResponse)
+      const mockResponse = new Response(new Blob(['test content']), {
+        status: 200,
+        statusText: 'OK',
+      })
 
-      await streamDownload('https://example.com/file.pdf', 'test.pdf')
+      await streamDownload(mockResponse, 'test.pdf')
 
-      expect(globalThis.fetch).toHaveBeenCalled()
       expect(createElementSpy).toHaveBeenCalledWith('a')
       expect(appendChildSpy).toHaveBeenCalled()
       expect(clickSpy).toHaveBeenCalled()
     })
 
     it('应该处理下载错误', async () => {
-      const mockResponse = new Response(null, { status: 404 })
-      globalThis.fetch = vi.fn().mockResolvedValue(mockResponse)
+      const mockResponse = new Response(null, {
+        status: 404,
+        statusText: 'Not Found',
+      })
 
-      await expect(streamDownload('https://example.com/file.pdf')).rejects.toThrow('HTTP error')
+      await expect(streamDownload(mockResponse)).rejects.toThrow('HTTP error')
     })
   })
 
@@ -100,13 +103,13 @@ describe('下载函数测试', () => {
       const onProgress = vi.fn()
       const contentLength = 100
       const mockResponse = new Response(new Blob(['test content']), {
+        status: 200,
+        statusText: 'OK',
         headers: { 'content-length': String(contentLength) },
       })
-      globalThis.fetch = vi.fn().mockResolvedValue(mockResponse)
 
-      await downloadWithProgress('https://example.com/file.pdf', onProgress, 'test.pdf')
+      await downloadWithProgress(mockResponse, onProgress, 'test.pdf')
 
-      expect(globalThis.fetch).toHaveBeenCalled()
       expect(onProgress).toHaveBeenCalled()
       expect(createElementSpy).toHaveBeenCalledWith('a')
       expect(appendChildSpy).toHaveBeenCalled()
