@@ -36,8 +36,8 @@ interface VisualizerConfig {
   barGapRatio?: number
   /** 圆形半径比例，范围：0-1 */
   circleRadiusRatio?: number
-  /** 参考圆环数 */
-  referenceCircles?: number
+  /** 是否绘制参考圆环 */
+  isDrawReferenceCircles?: boolean
   /** 是否启用鼠标交互 */
   enableMouseInteraction?: boolean
   /** 条形图边距比例，范围：0-1 */
@@ -50,6 +50,10 @@ interface VisualizerConfig {
   circularIntensityRatio?: number
   /** 是否使用单色透明效果 */
   useMonochrome?: boolean
+  /** 是否启用发光效果 */
+  enableGlow?: boolean
+  /** 圆环中心文本配置 */
+  centerText?: CenterTextConfig
 }
 
 // 添加缓存接口
@@ -78,11 +82,76 @@ interface CacheStore {
     cos: Map<number, number>
     atan2: Map<string, number>
   }
-  monochromeGradients: Map<string, {
-    barGradient?: CanvasGradient
-    lineGradient?: CanvasGradient
-    endPointGradient?: CanvasGradient
-  }>
+}
+
+// 修改配置接口
+interface CenterTextConfig {
+  /** 是否启用中心文本显示 */
+  enabled: boolean
+  /** 时间显示配置 */
+  time?: {
+    enabled: boolean
+    /**
+     * 字体大小比例（相对于圆形半径）范围：0-1
+     * @defaultValue 0.05
+     */
+    fontSizeRatio?: number
+    /**
+     * Y轴偏移比例（相对于圆形半径，负值向上）
+     * @defaultValue 0.05
+     */
+    offsetYRatio?: number
+    /** 颜色 */
+    color?: string
+    /** 字体，默认 'Monaco' */
+    fontFamily?: string
+  }
+  /** 日期显示配置 */
+  date?: {
+    /** 是否启用日期显示 */
+    enabled: boolean
+    /**
+     * 字体大小比例（相对于圆形半径）范围：0-1
+     * @defaultValue 0.05
+     */
+    fontSizeRatio?: number
+    /**
+     * Y轴偏移比例（相对于圆形半径，负值向上）范围：0-1
+     * @defaultValue 0.05
+     */
+    offsetYRatio?: number
+    /** 颜色 */
+    color?: string
+    /** 字体，默认 'Arial' */
+    fontFamily?: string
+  }
+  /** 自定义文本配置 */
+  custom?: {
+    /** 是否启用自定义文本显示 */
+    enabled: boolean
+    /** 自定义文本 */
+    text: string
+    /** 字体大小比例（相对于圆形半径）范围：0-1 */
+    fontSizeRatio?: number
+    /** Y轴偏移比例（相对于圆形半径，负值向上）范围：0-1 */
+    offsetYRatio?: number
+    /** 颜色 */
+    color?: string
+    /** 字体，默认 'Arial' */
+    fontFamily?: string
+    /** 动画效果 */
+    animation?: {
+      /**
+       * 动画类型
+       * 1. fade：渐变
+       * 2. slide：滑动
+       * 3. none：无动画
+       */
+      type?: 'fade' | 'slide' | 'none'
+      /** 动画持续时间（毫秒） */
+      duration?: number
+    }
+  }
 }
 
 export class AudioVisualizer {
@@ -121,13 +190,23 @@ export class AudioVisualizer {
     barWidthRatio: 0.6,
     barGapRatio: 0.4,
     circleRadiusRatio: 0.45,
-    referenceCircles: 4,
+    isDrawReferenceCircles: true,
     enableMouseInteraction: false,
     barMarginRatio: 0.05,
     barHeightRatio: 0.7,
     circularBarHeightRatio: 0.8,
     circularIntensityRatio: 0.3,
     useMonochrome: false,
+    enableGlow: false,
+    centerText: {
+      enabled: true,
+      time: {
+        enabled: true,
+      },
+      date: {
+        enabled: true,
+      },
+    },
   }
 
   /** 缓存存储 */
@@ -143,7 +222,6 @@ export class AudioVisualizer {
       cos: new Map(),
       atan2: new Map(),
     },
-    monochromeGradients: new Map(),
   }
 
   /** 防抖计时器 */
@@ -156,6 +234,19 @@ export class AudioVisualizer {
     centerX: 0,
     centerY: 0,
     dirty: true,
+  }
+
+  private readonly monochromeGradientTemplate = {
+    bar: null as CanvasGradient | null,
+    line: null as CanvasGradient | null,
+  }
+
+  private drawCenterTextCache = {
+    lastTimeString: '',
+    lastDateString: '',
+    lastUpdateTime: 0,
+    lastCustomText: '',
+    customTextAnimationStart: 0,
   }
 
   /**
@@ -171,7 +262,7 @@ export class AudioVisualizer {
     this.ctx = canvas.getContext('2d', { alpha: true })!
     this.setupMouseEvents()
 
-    // 优化 resize 事件处理
+    // resize 事件处理
     window.addEventListener('resize', () => {
       // 如果存在计时器，则清除
       if (this.resizeTimer)
@@ -247,7 +338,6 @@ export class AudioVisualizer {
 
   /** 预计算条形图位置 */
   private calculateBarPositions(canvasWidth: number) {
-    // const cacheKey = `${canvasWidth}-${this.config.segments}-${this.config.barMarginRatio}-${this.config.barWidthRatio}-${this.config.barGapRatio}`
     const w = Math.round(canvasWidth)
     const m = Math.round(this.config.barMarginRatio * 100)
     const bw = Math.round(this.config.barWidthRatio * 100)
@@ -322,38 +412,42 @@ export class AudioVisualizer {
     return gradient
   }
 
-  /** 优化后的条形图绘制 */
+  /** 条形图绘制 */
   private drawBars() {
     // 获取画布中心坐标
     const { centerX, centerY } = this.setupCanvas()
-    // 使用缓存的背景渐变
+    // 计算条形位置
+    const barPositions = this.calculateBarPositions(this.canvas.width)
+    // 处理频谱数据
+    const interpolatedData = this.processAudioData(this.config.segments)
+    if (!interpolatedData)
+      return
+
+    // 绘制背景 - 使用缓存的背景渐变
     const bgGradient = this.getBackgroundGradient(centerX, centerY)
     // 设置背景填充样式
     this.ctx.fillStyle = bgGradient
     // 绘制背景
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
-    // 获取预计算的条形位置
-    const barPositions = this.calculateBarPositions(this.canvas.width)
+    // 计算动态效果
+    const { pulseEffect } = this.calculateDynamicEffects(0, 1)
+    // 计算高度倍数
+    const heightMultiplier = this.config.heightMultiplier * pulseEffect
 
-    // 处理频谱数据
-    const interpolatedData = this.processAudioData(this.config.segments)
-    if (!interpolatedData)
-      return
-
-    // 批量处理绘制
-    for (let i = 0; i < this.config.segments; i++) {
-      // 计算幅度
-      const amplitude = interpolatedData[i] / 255
-      // 计算强度
-      const intensity = Math.sin((i / this.config.segments) * Math.PI)
-      // 计算高度倍数
-      const heightMultiplier = this.config.heightMultiplier + (intensity * 0.3)
-      // 计算条形高度
-      const barHeight = amplitude * this.canvas.height * this.config.barHeightRatio * heightMultiplier
-      // 获取条形位置
-      const { x, width } = barPositions[i]
-      if (this.config.useMonochrome) {
+    if (this.config.useMonochrome) {
+      // 单色模式批量处理
+      for (let i = 0; i < this.config.segments; i++) {
+        // 计算幅度
+        const amplitude = interpolatedData[i] / 255
+        // 如果幅度小于0.001，则跳过
+        if (amplitude < 0.001)
+          continue
+        // 获取条形位置
+        const { x, width } = barPositions[i]
+        // 计算条形高度
+        const barHeight = amplitude * this.canvas.height * this.config.barHeightRatio * heightMultiplier
+        // 绘制单色条形
         this.drawMonochromeBarGradient(
           x,
           this.canvas.height - barHeight,
@@ -362,9 +456,28 @@ export class AudioVisualizer {
           amplitude,
         )
       }
-      else {
-      // 创建渐变
-        const { color, gradient } = this.createGradient(i, amplitude, this.config.segments)
+    }
+    else {
+      // 彩色模式批量处理
+      // 预先创建所有渐变
+      const gradients = Array.from({ length: this.config.segments }, (_, i) => {
+        // 计算幅度
+        const amplitude = interpolatedData[i] / 255
+        return this.createGradient(i, amplitude, this.config.segments)
+      })
+
+      for (let i = 0; i < this.config.segments; i++) {
+        // 计算幅度
+        const amplitude = interpolatedData[i] / 255
+        // 如果幅度小于0.001，则跳过
+        if (amplitude < 0.001)
+          continue
+        // 获取条形位置
+        const { x, width } = barPositions[i]
+        // 计算条形高度
+        const barHeight = amplitude * this.canvas.height * this.config.barHeightRatio * heightMultiplier
+        // 获取渐变
+        const { color, gradient } = gradients[i]
         // 创建线性渐变
         const barGradient = this.ctx.createLinearGradient(
           x,
@@ -374,11 +487,9 @@ export class AudioVisualizer {
         )
         // 添加渐变颜色
         gradient.forEach((color, index) => barGradient.addColorStop(index * 0.5, color))
-
         // 设置发光效果
         this.setGlowEffect(color, amplitude)
-
-        // 绘制条形
+        // 设置填充样式
         this.ctx.fillStyle = barGradient
         // 绘制条形
         this.ctx.fillRect(x, this.canvas.height - barHeight, width, barHeight)
@@ -389,9 +500,9 @@ export class AudioVisualizer {
     this.resetEffects()
   }
 
-  /** 优化后的圆形可视化绘制 */
+  /** 圆形可视化绘制 */
   private drawCircular() {
-    // 获取画布中心坐标
+    // 获取画布中心坐标和基础数据，只计算一次
     const { centerX, centerY } = this.setupCanvas()
     // 计算圆形半径
     const radius = Math.min(centerX, centerY) * this.config.circleRadiusRatio
@@ -399,23 +510,29 @@ export class AudioVisualizer {
     const { pulseEffect } = this.calculateDynamicEffects(0, 1)
     // 计算脉冲半径
     const pulseRadius = radius * pulseEffect
+    // 计算线条宽度
+    const lineWidth = 2 * window.devicePixelRatio
 
-    // 使用缓存的背景渐变
+    // 绘制背景 - 使用缓存的背景渐变
     const bgGradient = this.getBackgroundGradient(centerX, centerY)
     // 设置背景填充样式
     this.ctx.fillStyle = bgGradient
     // 绘制背景
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
-    // 绘制参考圆环
-    this.drawReferenceCircles(centerX, centerY, radius)
+    // 批量绘制参考圆环
+    if (this.config.isDrawReferenceCircles) {
+      this.drawReferenceCircles(centerX, centerY, radius)
+    }
 
-    // 添加动态光晕
-    const glowGradient = this.createDynamicGlow(centerX, centerY, radius)
-    // 设置背景填充样式
-    this.ctx.fillStyle = glowGradient
-    // 绘制背景
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+    if (this.config.enableGlow) {
+      // 添加动态光晕
+      const glowGradient = this.createDynamicGlow(centerX, centerY, radius)
+      // 设置背景填充样式
+      this.ctx.fillStyle = glowGradient
+      // 绘制背景
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+    }
 
     // 获取预计算的角度数组
     const angles = this.calculateCircularAngles(this.config.segments)
@@ -428,57 +545,79 @@ export class AudioVisualizer {
     if (!interpolatedData)
       return
 
-    // 批量处理绘制
-    this.ctx.beginPath()
-    // 设置线条宽度
-    const lineWidth = 2 * window.devicePixelRatio
-    this.ctx.lineWidth = lineWidth
-    // 减小线条宽度
-    const monochromeHalfWidth = lineWidth / 2
+    // 批量处理单色模式和彩色模式
+    if (this.config.useMonochrome) {
+      // 单色模式批量处理
+      for (let i = 0; i < this.config.segments; i++) {
+        // 计算幅度
+        const amplitude = interpolatedData[i] / 255
+        // 如果幅度小于0.001，则跳过
+        if (amplitude < 0.001)
+          continue
 
-    for (let i = 0; i < this.config.segments; i++) {
-      // 计算幅度
-      const amplitude = interpolatedData[i] / 255
-      // 计算角度
-      const angle = angles[i]
+        // 计算角度
+        const angle = angles[i]
+        // 计算动态效果
+        const { heightMultiplier } = this.calculateDynamicEffects(i, this.config.segments)
+        // 计算交互倍数
+        const interactionMultiplier = this.calculateInteractionMultiplier(angle, mouseInteraction, radius)
+        // 计算条形高度
+        const barHeight = amplitude * (radius * this.config.circularBarHeightRatio) * heightMultiplier * interactionMultiplier
 
-      // 计算高度和位置
-      const { heightMultiplier } = this.calculateDynamicEffects(i, this.config.segments)
-      // 计算交互乘数
-      const interactionMultiplier = this.calculateInteractionMultiplier(
-        angle,
-        mouseInteraction,
-        radius,
-      )
-      // 计算条形高度
-      const barHeight = amplitude * (radius * this.config.circularBarHeightRatio) * heightMultiplier * interactionMultiplier
+        // 计算圆形点
+        const [x1, y1] = this.getCircularPoint(centerX, centerY, pulseRadius, angle)
+        const [x2, y2] = this.getCircularPoint(centerX, centerY, pulseRadius + barHeight, angle)
 
-      // 计算线条起点和终点
-      const [x1, y1] = this.getCircularPoint(centerX, centerY, pulseRadius, angle)
-      const [x2, y2] = this.getCircularPoint(centerX, centerY, pulseRadius + barHeight, angle)
-      if (this.config.useMonochrome) {
-        this.drawMonochromeLineGradient(x1, y1, x2, y2, amplitude, lineWidth, monochromeHalfWidth)
+        // 绘制单色线条
+        this.drawMonochromeLineGradient(x1, y1, x2, y2, amplitude, lineWidth)
       }
-      else {
-        // 设置渐变和发光效果
-        const { color, gradient } = this.createGradient(i, amplitude, this.config.segments)
+    }
+    else {
+      // 彩色模式批量处理
+      this.ctx.lineWidth = lineWidth
+
+      // 预先创建所有需要的渐变
+      const gradients = Array.from({ length: this.config.segments }, (_, i) => {
+        // 计算幅度
+        const amplitude = interpolatedData[i] / 255
+        // 创建渐变
+        return this.createGradient(i, amplitude, this.config.segments)
+      })
+
+      for (let i = 0; i < this.config.segments; i++) {
+        // 计算幅度
+        const amplitude = interpolatedData[i] / 255
+        // 如果幅度小于0.001，则跳过
+        if (amplitude < 0.001)
+          continue
+
+        // 计算角度
+        const angle = angles[i]
+        // 计算动态效果
+        const { heightMultiplier } = this.calculateDynamicEffects(i, this.config.segments)
+        // 计算交互倍数
+        const interactionMultiplier = this.calculateInteractionMultiplier(angle, mouseInteraction, radius)
+        // 计算条形高度
+        const barHeight = amplitude * (radius * this.config.circularBarHeightRatio) * heightMultiplier * interactionMultiplier
+        // 计算圆形点
+        const [x1, y1] = this.getCircularPoint(centerX, centerY, pulseRadius, angle)
+        const [x2, y2] = this.getCircularPoint(centerX, centerY, pulseRadius + barHeight, angle)
+
+        // 使用预先创建的渐变
+        const { color, gradient } = gradients[i]
         // 创建线性渐变
         const lineGradient = this.ctx.createLinearGradient(x1, y1, x2, y2)
         // 添加渐变颜色
         gradient.forEach((color, index) => lineGradient.addColorStop(index * 0.5, color))
-
         // 设置发光效果
         this.setGlowEffect(color, amplitude)
-
         // 绘制线条
         this.ctx.beginPath()
-        // 设置线条宽度
-        this.ctx.lineWidth = 2 * window.devicePixelRatio
-        // 设置线条填充样式
+        // 设置线条样式
         this.ctx.strokeStyle = lineGradient
-        // 设置线条起点
+        // 移动到起点
         this.ctx.moveTo(x1, y1)
-        // 设置线条终点
+        // 绘制到终点
         this.ctx.lineTo(x2, y2)
         // 绘制线条
         this.ctx.stroke()
@@ -487,6 +626,9 @@ export class AudioVisualizer {
 
     // 重置发光效果
     this.resetEffects()
+
+    // 在重置效果后绘制中心文本
+    this.drawCenterText(centerX, centerY, radius)
   }
 
   /** 设置鼠标事件监听 */
@@ -718,7 +860,8 @@ export class AudioVisualizer {
     const time = Date.now() * this.config.pulseSpeed
     const cx = Math.round(centerX * 10)
     const cy = Math.round(centerY * 10)
-    const cacheKey = `dynamic-glow-${cx}-${cy}`
+    const r = Math.round(radius * 10)
+    const cacheKey = `dynamic-glow-${cx}-${cy}-${r}`
     const cached = this.cache.backgroundGradient.get(cacheKey)
     if (cached)
       return cached
@@ -744,22 +887,33 @@ export class AudioVisualizer {
   private drawReferenceCircles(centerX: number, centerY: number, radius: number) {
     // 获取脉冲效果
     const { pulseEffect } = this.calculateDynamicEffects(0, 1)
-
+    // 计算圆环半径
+    const circleRadius = radius * pulseEffect
+    // 开始绘制圆环路径
+    this.ctx.beginPath()
+    // 绘制圆环路径
+    this.ctx.arc(centerX, centerY, circleRadius, 0, 2 * Math.PI)
+    // 设置圆环填充样式
+    this.ctx.strokeStyle = `rgba(255, 255, 255, 0.04)`
+    // 设置圆环宽度
+    this.ctx.lineWidth = 1 * window.devicePixelRatio
+    // 绘制圆环
+    this.ctx.stroke()
     // 遍历参考圆环
-    for (let i = 1; i <= this.config.referenceCircles; i++) {
-      // 计算圆环半径，添加脉冲效果
-      const circleRadius = radius * (i / this.config.referenceCircles) * pulseEffect
+    // for (let i = 1; i <= this.config.referenceCircles; i++) {
+    //   // 计算圆环半径，添加脉冲效果
+    //   const circleRadius = radius * (i / this.config.referenceCircles) * pulseEffect
 
-      this.ctx.beginPath()
-      // 绘制圆环路径
-      this.ctx.arc(centerX, centerY, circleRadius, 0, 2 * Math.PI)
-      // 设置圆环填充样式
-      this.ctx.strokeStyle = `rgba(255, 255, 255, ${0.02 + (i / this.config.referenceCircles) * 0.02})`
-      // 设置圆环宽度
-      this.ctx.lineWidth = 1 * window.devicePixelRatio
-      // 绘制圆环
-      this.ctx.stroke()
-    }
+    //   this.ctx.beginPath()
+    //   // 绘制圆环路径
+    //   this.ctx.arc(centerX, centerY, circleRadius, 0, 2 * Math.PI)
+    //   // 设置圆环填充样式
+    //   this.ctx.strokeStyle = `rgba(255, 255, 255, ${0.02 + (i / this.config.referenceCircles) * 0.02})`
+    //   // 设置圆环宽度
+    //   this.ctx.lineWidth = 1 * window.devicePixelRatio
+    //   // 绘制圆环
+    //   this.ctx.stroke()
+    // }
   }
 
   /** 计算圆形上的点 */
@@ -827,9 +981,14 @@ export class AudioVisualizer {
   /** 配置更新方法 */
   public updateConfig(newConfig: Partial<VisualizerConfig>) {
     const oldEnableMouseInteraction = this.config.enableMouseInteraction
+    const { centerText, ...rest } = newConfig
     this.config = {
       ...this.config,
-      ...newConfig,
+      ...rest,
+      centerText: {
+        ...this.config.centerText,
+        ...centerText,
+      },
     }
 
     // 如果鼠标交互设置发生变化，重新设置事件监听
@@ -875,117 +1034,94 @@ export class AudioVisualizer {
       this.cache.trigCache.atan2.clear()
   }
 
-  /** 用于条形图的单色渐变效果 */
-  private drawMonochromeBarGradient(x: number, y: number, width: number, height: number, amplitude: number) {
-    // 设置发光效果
-    this.setGlowEffect('rgba(255, 255, 255, 0.9)', amplitude)
-
-    // 创建缓存键
-    const bx = Math.round(x)
-    const bw = Math.round(width)
-    const cacheKey = `bar-${bx}-${bw}`
-    let gradients = this.cache.monochromeGradients.get(cacheKey)
-
-    if (!gradients?.barGradient) {
-    // 创建主体渐变
-      const barGradient = this.ctx.createLinearGradient(x, 0, x + width, 0)
+  private initMonochromeGradients() {
+    // 只创建一次固定的渐变模板
+    if (!this.monochromeGradientTemplate.bar) {
+      // 条形图渐变模板
+      const barGradient = this.ctx.createLinearGradient(0, 0, 1, 0)
       barGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)')
       barGradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.2)')
       barGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)')
       barGradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)')
       barGradient.addColorStop(1, 'rgba(255, 255, 255, 0.9)')
+      this.monochromeGradientTemplate.bar = barGradient
 
-      gradients = { barGradient }
-      this.cache.monochromeGradients.set(cacheKey, gradients)
-    }
-
-    this.ctx.fillStyle = gradients.barGradient!
-    this.ctx.fillRect(x, y, width, height)
-
-    // 绘制顶部白色封闭区域
-    const topHeight = Math.min(2, height * 0.1)
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
-    this.ctx.fillRect(x, y, width, topHeight)
-  }
-
-  /** 用于圆形图的单色渐变效果 */
-  private drawMonochromeLineGradient(x1: number, y1: number, x2: number, y2: number, amplitude: number, lineWidth: number, halfWidth: number) {
-    if (amplitude < 0.001)
-      return
-
-    this.setGlowEffect('rgba(255, 255, 255, 0.9)', amplitude)
-
-    // 使用缓存的 atan2
-    const angle = this.getCachedAtan2(y2 - y1, x2 - x1)
-    const perpendicular = angle + Math.PI / 2
-
-    // 使用缓存的 cos 和 sin
-    const cosPerp = this.getCachedCos(perpendicular)
-    const sinPerp = this.getCachedSin(perpendicular)
-
-    // 计算线条的四个角点
-    const leftX1 = x1 + cosPerp * halfWidth
-    const leftY1 = y1 + sinPerp * halfWidth
-    const rightX1 = x1 - cosPerp * halfWidth
-    const rightY1 = y1 - sinPerp * halfWidth
-
-    const lx1 = Math.round(leftX1 * 10)
-    const ly1 = Math.round(leftY1 * 10)
-    const rx1 = Math.round(rightX1 * 10)
-    const ry1 = Math.round(rightY1 * 10)
-    const cacheKey = `line-${lx1}-${ly1}-${rx1}-${ry1}`
-    let gradients = this.cache.monochromeGradients.get(cacheKey)
-
-    if (!gradients?.lineGradient) {
-      const lineGradient = this.ctx.createLinearGradient(leftX1, leftY1, rightX1, rightY1)
+      // 线条渐变模板
+      const lineGradient = this.ctx.createLinearGradient(0, -0.5, 0, 0.5)
       lineGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)')
       lineGradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.2)')
       lineGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)')
       lineGradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)')
       lineGradient.addColorStop(1, 'rgba(255, 255, 255, 0.9)')
-
-      gradients = {
-        lineGradient,
-      }
-      this.cache.monochromeGradients.set(cacheKey, gradients)
+      this.monochromeGradientTemplate.line = lineGradient
     }
+  }
 
-    // 计算剩余的角点时也使用缓存的三角函数
-    const leftX2 = x2 + cosPerp * halfWidth
-    const leftY2 = y2 + sinPerp * halfWidth
-    const rightX2 = x2 - cosPerp * halfWidth
-    const rightY2 = y2 - sinPerp * halfWidth
+  /** 用于条形图的单色渐变效果 */
+  private drawMonochromeBarGradient(x: number, y: number, width: number, height: number, amplitude: number) {
+    // 设置发光效果
+    this.setGlowEffect('rgba(255, 255, 255, 0.9)', amplitude)
 
+    // 使用模板渐变
+    if (!this.monochromeGradientTemplate.bar)
+      this.initMonochromeGradients()
+
+    // 1. 绘制主体渐变
+    this.ctx.fillStyle = this.monochromeGradientTemplate.bar!
+    // 通过 transform 来调整渐变位置和大小
+    this.ctx.save()
+    // 通过 translate 来调整渐变位置
+    this.ctx.translate(x, y)
+    // 通过 scale 来调整渐变大小
+    this.ctx.scale(width, height)
+    // 通过 fillRect 来绘制渐变
+    this.ctx.fillRect(0, 0, 1, 1)
+    // 恢复到原始状态
+    this.ctx.restore()
+
+    // 2. 绘制顶部发光效果
+    const topGlowHeight = Math.min(height * 0.1, 2)
+    // 设置顶部发光效果
+    this.ctx.fillStyle = `rgba(255, 255, 255, 0.6)`
+    // 通过 fillRect 来绘制顶部发光效果
+    this.ctx.fillRect(x, y, width, topGlowHeight)
+  }
+
+  /** 用于圆形图的单色渐变效果 */
+  private drawMonochromeLineGradient(x1: number, y1: number, x2: number, y2: number, amplitude: number, lineWidth: number) {
+    // 设置发光效果
+    this.setGlowEffect('rgba(255, 255, 255, 0.9)', amplitude)
+
+    // 使用缓存的 atan2 计算角度
+    const angle = this.getCachedAtan2(y2 - y1, x2 - x1)
+    // 计算线条长度
+    const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+    // 确保模板渐变已初始化
+    if (!this.monochromeGradientTemplate.line)
+      this.initMonochromeGradients()
+
+    // 绘制主线条
+    this.ctx.save()
+    // 通过 translate 和 rotate 来调整线条位置和角度
+    this.ctx.translate(x1, y1)
+    // 通过 rotate 来调整线条角度
+    this.ctx.rotate(angle)
+    // 通过 scale 来调整线条长度和宽度
+    this.ctx.scale(length, lineWidth)
+    // 绘制线条
+    this.ctx.fillStyle = this.monochromeGradientTemplate.line!
+    // 通过 fillRect 来绘制线条
+    this.ctx.fillRect(0, -0.5, 1, 1)
+    // 恢复到原始状态
+    this.ctx.restore()
+
+    // 绘制端点发光效果
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
+    // 通过 beginPath 和 arc 来绘制端点发光效果
     this.ctx.beginPath()
-    this.ctx.moveTo(leftX1, leftY1)
-    this.ctx.lineTo(leftX2, leftY2)
-    this.ctx.lineTo(rightX2, rightY2)
-    this.ctx.lineTo(rightX1, rightY1)
-    this.ctx.closePath()
-
-    this.ctx.fillStyle = gradients.lineGradient!
-    this.ctx.fill()
-
-    // 端点渐变缓存键
-    const ex2 = Math.round(x2 * 10)
-    const ey2 = Math.round(y2 * 10)
-    const lw = Math.round(lineWidth * 10)
-    const endPointCacheKey = `endpoint-${ex2}-${ey2}-${lw}`
-    let endPointGradients = this.cache.monochromeGradients.get(endPointCacheKey)
-
-    if (!endPointGradients?.endPointGradient) {
-      const endPointGradient = this.ctx.createRadialGradient(x2, y2, 0, x2, y2, lineWidth)
-      endPointGradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)')
-      endPointGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.2)')
-      endPointGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
-
-      endPointGradients = { endPointGradient }
-      this.cache.monochromeGradients.set(endPointCacheKey, endPointGradients)
-    }
-
-    this.ctx.fillStyle = endPointGradients.endPointGradient!
-    this.ctx.beginPath()
-    this.ctx.arc(x2, y2, lineWidth * 0.4, 0, Math.PI * 2)
+    this.ctx.arc(x2, y2, lineWidth * 0.2, 0, Math.PI * 2)
+    // 通过 fill 来填充端点发光效果
     this.ctx.fill()
   }
 
@@ -1000,5 +1136,180 @@ export class AudioVisualizer {
       this.cache.trigCache.atan2.set(key, value)
     }
     return value
+  }
+
+  private drawCenterText(centerX: number, centerY: number, radius: number) {
+    const config = this.config.centerText
+    if (!config?.enabled)
+      return
+
+    // 保存当前状态
+    this.ctx.save()
+    // 设置文本对齐方式
+    this.ctx.textAlign = 'center'
+    // 设置文本基线
+    this.ctx.textBaseline = 'middle'
+
+    const now = new Date()
+    const currentTime = now.getTime()
+
+    // 每分钟更新一次时间和日期字符串
+    if (currentTime - this.drawCenterTextCache.lastUpdateTime > 60000) {
+      const hours = now.getHours().toString().padStart(2, '0')
+      const minutes = now.getMinutes().toString().padStart(2, '0')
+      this.drawCenterTextCache.lastTimeString = `${hours} : ${minutes}`
+
+      const year = now.getFullYear()
+      const month = now.getMonth() + 1
+      const day = now.getDate()
+      const weekday = now.toLocaleDateString('en-US', { weekday: 'long' })
+      this.drawCenterTextCache.lastDateString = `${year} / ${month} / ${day} ${weekday}`
+
+      this.drawCenterTextCache.lastUpdateTime = currentTime
+    }
+
+    // 1. 绘制时间
+    if (config.time?.enabled) {
+      const {
+        fontSizeRatio = 0.15,
+        offsetYRatio = -0.1,
+        color = 'rgba(255, 255, 255, 0.9)',
+        fontFamily = 'Monaco',
+      } = config.time
+
+      // 计算字体大小和偏移量
+      const fontSize = radius * fontSizeRatio
+      // 计算偏移量
+      const offsetY = radius * offsetYRatio
+      // 计算秒数字体大小
+      const secondsFontSize = fontSize * 0.5
+      // 获取秒数
+      const seconds = now.getSeconds().toString().padStart(2, '0')
+
+      // 绘制小时和分钟（大号）
+      this.ctx.font = `bold ${fontSize}px ${fontFamily}`
+      this.ctx.fillStyle = color
+      // 计算时间字符串宽度
+      const timeWidth = this.ctx.measureText(this.drawCenterTextCache.lastTimeString).width
+      // 绘制时间字符串
+      this.ctx.fillText(this.drawCenterTextCache.lastTimeString, centerX - timeWidth * 0.15, centerY + offsetY)
+
+      // 绘制秒数（小号）
+      this.ctx.font = `bold ${secondsFontSize}px ${fontFamily}`
+      // 通过添加 fontSize * 0.25 来向下偏移秒数，使其底部对齐
+      this.ctx.fillText(seconds, centerX + timeWidth * 0.5, centerY + offsetY + fontSize * 0.1)
+    }
+
+    // 2. 绘制日期
+    if (config.date?.enabled) {
+      const {
+        fontSizeRatio = 0.08,
+        offsetYRatio = 0.1,
+        color = 'rgba(255, 255, 255, 0.7)',
+        fontFamily = 'Arial',
+      } = config.date
+
+      // 计算字体大小和偏移量
+      const fontSize = radius * fontSizeRatio
+      const offsetY = radius * offsetYRatio
+
+      // 设置字体
+      this.ctx.font = `${fontSize}px ${fontFamily}`
+      // 设置文本颜色
+      this.ctx.fillStyle = color
+      // 绘制日期字符串
+      this.ctx.fillText(this.drawCenterTextCache.lastDateString, centerX, centerY + offsetY)
+    }
+
+    // 3. 绘制自定义文本
+    if (config.custom?.enabled) {
+      const {
+        fontSizeRatio = 0.1,
+        offsetYRatio = 0.3,
+        color = 'rgba(255, 255, 255, 0.8)',
+        fontFamily = 'Arial',
+        text,
+        animation = {
+          type: 'fade' as const,
+          duration: 500,
+        },
+      } = config.custom
+
+      this.drawCustomText(centerX, centerY, radius, {
+        enabled: true,
+        text,
+        fontSizeRatio,
+        offsetYRatio,
+        color,
+        fontFamily,
+        animation,
+      })
+    }
+
+    // 恢复到原始状态
+    this.ctx.restore()
+  }
+
+  private drawCustomText(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    config: NonNullable<Required<CenterTextConfig['custom']>>,
+  ) {
+    // 计算字体大小
+    const fontSize = radius * config.fontSizeRatio
+    // 计算偏移量
+    const offsetY = radius * config.offsetYRatio
+
+    // 设置字体
+    this.ctx.font = `${fontSize}px ${config.fontFamily}`
+    // 设置文本颜色
+    this.ctx.fillStyle = config.color
+
+    // 如果文本发生变化，则记录文本和动画开始时间
+    if (this.drawCenterTextCache.lastCustomText !== config.text) {
+      // 记录文本
+      this.drawCenterTextCache.lastCustomText = config.text
+      // 记录动画开始时间
+      this.drawCenterTextCache.customTextAnimationStart = Date.now()
+    }
+
+    // 计算动画进度
+    const animationProgress = Math.min(
+      (Date.now() - this.drawCenterTextCache.customTextAnimationStart) / (config.animation.duration ?? 500),
+      1,
+    )
+
+    switch (config.animation.type) {
+      case 'fade': {
+        // 设置透明度
+        this.ctx.globalAlpha = animationProgress
+        // 绘制文本
+        this.ctx.fillText(config.text, centerX, centerY + offsetY)
+        break
+      }
+
+      case 'slide': {
+        // 计算偏移量
+        const slideOffset = (1 - animationProgress) * radius * 0.5
+        // 绘制文本
+        this.ctx.fillText(
+          config.text,
+          centerX,
+          centerY + offsetY + slideOffset,
+        )
+        break
+      }
+
+      case 'none':
+      default: {
+        // 绘制文本
+        this.ctx.fillText(config.text, centerX, centerY + offsetY)
+        break
+      }
+    }
+
+    // 重置透明度
+    this.ctx.globalAlpha = 1
   }
 }

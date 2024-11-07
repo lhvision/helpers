@@ -1,5 +1,6 @@
 export * from './audioVisualizer'
 export * from './download'
+export * from './eyeDropper'
 export * from './fullScreen'
 export * from './stream'
 export * from './token'

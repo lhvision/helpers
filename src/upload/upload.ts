@@ -183,7 +183,8 @@ export function hashStreamToUploadStream(
 
 /**
  * 通用的文件分片上传处理流程。
- * 文件 -> ReadableStream(分片+哈希)[hashStream]  -> TransformStream(上传)[uploadStream] -> 结果收集[results]
+ * 1. 文件 -> ReadableStream(分片+哈希)[hashStream]  -> TransformStream(上传)[uploadStream] -> 结果收集[results]
+ * 2. createWorker 可以使用 pnpm helpers [options] [targetDir="src/worker"] 创建一个 worker 实现
  */
 export async function uploadFileInChunks(
   file: File,
