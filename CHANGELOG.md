@@ -1,3 +1,9 @@
+## <small>2.0.4 (2024-11-07)</small>
+
+* feat: 新增 getEyeDropperColor 函数，优化 audio 生成频谱图类 ([ab387b7](https://github.com/lhvision/helpers/commit/ab387b7))
+
+
+
 ## <small>2.0.3 (2024-11-06)</small>
 
 * feat: request 新增直接返回 Response 对象参数 rawResponse 以用于流式下载等场景 ([f778ac2](https://github.com/lhvision/helpers/commit/f778ac2))
