@@ -1,3 +1,20 @@
+## 2.0.5 (2024-11-10)
+
+
+### Bug Fixes
+
+* 修复 build 后不该保留的代码注释 ([fc92004](https://github.com/lhvision/helpers/commit/fc920043af9e92eb2f2a742fa64fc6318a1f6fa0))
+
+
+### Features
+
+* request 新增直接返回 Response 对象参数 rawResponse 以用于流式下载等场景 ([f778ac2](https://github.com/lhvision/helpers/commit/f778ac2bd62f0c89a1bbade5ecff91e37d712fe3))
+* 优化 audioVisualizer, 新增防抖节流函数 ([646e11c](https://github.com/lhvision/helpers/commit/646e11c56ab4412e85aa5c95cedd59ccfb85f3bc))
+* 新增 getEyeDropperColor 函数，优化 audio 生成频谱图类 ([ab387b7](https://github.com/lhvision/helpers/commit/ab387b79c28ad05191860763889b45d56760f632))
+* 调整 request 拦截器现在可以为不同的域名注册拦截器或者默认的拦截器，新增 audio 频谱图生成函数 ([0aa8337](https://github.com/lhvision/helpers/commit/0aa8337f2f4b52b57a7022f294847bc22cca18f3))
+
+
+
 ## <small>2.0.4 (2024-11-07)</small>
 
 * feat: 新增 getEyeDropperColor 函数，优化 audio 生成频谱图类 ([ab387b7](https://github.com/lhvision/helpers/commit/ab387b7))
