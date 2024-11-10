@@ -2,7 +2,7 @@
   "name": "@lhvision/helpers",
   "type": "module",
   "version": "2.0.4",
-  "packageManager": "pnpm@9.x",
+  "packageManager": "pnpm@9.9.0",
   "description": "一些简单实用的工具函数",
   "author": "lhvision",
   "license": "MIT",
@@ -83,13 +83,13 @@
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.10",
     "npm-run-all2": "^7.0.1",
-    "rollup": "^4.24.4",
+    "rollup": "^4.25.0",
     "rollup-plugin-dts": "^6.1.1",
     "simple-git-hooks": "^2.11.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vitest": "^2.1.4",
-    "zx": "^8.2.0"
+    "zx": "^8.2.1"
   },
   "pnpm": {
     "peerDependencyRules": {
