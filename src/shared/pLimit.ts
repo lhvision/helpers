@@ -38,7 +38,7 @@ class Queue {
    * @param fn 要添加的任务函数，返回一个Promise
    * @returns 返回一个Promise，表示任务完成时的结果
    */
-  public add<T>(fn: () => Promise<T>): Promise<T> {
+  add<T>(fn: () => Promise<T>): Promise<T> {
     if (this.isAborting) {
       return Promise.reject(new Error('Queue execution aborted'))
     }

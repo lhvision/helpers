@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { pLimit } from '../shared/pLimit'
+import { pLimit } from '../pLimit'
 
 describe('pLimit', () => {
   // 辅助函数和变量设置

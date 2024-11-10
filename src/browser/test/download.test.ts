@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { downloadBlob, downloadUrl, downloadWithProgress, streamDownload } from '../browser/download'
+import { downloadBlob, downloadUrl, downloadWithProgress, streamDownload } from '../download'
 
 describe('下载函数测试', () => {
   let appendChildSpy: any

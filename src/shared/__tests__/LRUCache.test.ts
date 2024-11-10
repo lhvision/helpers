@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { LRUCache } from '../shared/LRUCache' // 假设你的 LRUCache 文件路径为 src/LRUCache
+import { LRUCache } from '../LRUCache'
 
 describe('lRUCache', () => {
   let cache: LRUCache<number, number>

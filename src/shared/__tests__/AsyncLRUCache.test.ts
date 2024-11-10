@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AsyncLRUCache } from '../shared/LRUCache'
+import { AsyncLRUCache } from '../LRUCache'
 
 interface TestData {
   value: string

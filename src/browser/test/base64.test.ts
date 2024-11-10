@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it } from 'vitest'
-import { fileToBase64Browser } from '../browser/base64'
+import { fileToBase64Browser } from '../base64'
 
 describe('imageToBase64Browser', () => {
   it('should convert a Blob to Base64 string', async () => {

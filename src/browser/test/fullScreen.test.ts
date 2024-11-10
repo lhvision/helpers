@@ -9,7 +9,7 @@ import {
   onFullScreenChange,
   requestFullScreen,
   toggleFullScreen,
-} from '../browser/fullScreen'
+} from '../fullScreen'
 
 describe('fullscreen API', () => {
   let element: HTMLElement

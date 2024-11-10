@@ -23,14 +23,22 @@ jobs:
     steps:
       # 检出代码
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 10
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
 
       # 设置 Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org/'
+          cache: pnpm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -51,15 +59,6 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm build
         continue-on-error: false
-
-      # 使用缓存加速 pnpm 依赖安装
-      - name: Cache pnpm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
 
       - name: Run publish script
         run: |
