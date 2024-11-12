@@ -22,6 +22,7 @@ export default defineConfig({
         node: resolve(__dirname, 'src/node/index.ts'),
         shared: resolve(__dirname, 'src/shared/index.ts'),
         upload: resolve(__dirname, 'src/upload/index.ts'),
+        request: resolve(__dirname, 'src/request/index.ts'),
       },
       name: '@lhvision/helpers',
       formats: ['es'],

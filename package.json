@@ -33,6 +33,10 @@
     "./upload": {
       "types": "./dist/upload.d.ts",
       "import": "./dist/upload.js"
+    },
+    "./request": {
+      "types": "./dist/request.d.ts",
+      "import": "./dist/request.js"
     }
   },
   "main": "./dist/index.js",

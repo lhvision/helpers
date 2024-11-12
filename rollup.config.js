@@ -22,6 +22,7 @@ export default [
       node: resolve(rootDir, 'dist/types/node/index.d.ts'),
       shared: resolve(rootDir, 'dist/types/shared/index.d.ts'),
       upload: resolve(rootDir, 'dist/types/upload/index.d.ts'),
+      request: resolve(rootDir, 'dist/types/request/index.d.ts'),
     },
     output: {
       dir: resolve(rootDir, 'dist'),
