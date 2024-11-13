@@ -1,3 +1,15 @@
+## 2.0.7 (2024-11-13)
+
+
+### Features
+
+* 优化 audioVisualizer, 新增防抖节流函数 ([646e11c](https://github.com/lhvision/helpers/commit/646e11c56ab4412e85aa5c95cedd59ccfb85f3bc))
+* 因为 RequestManager 为单例，调整 request 为单独导出 ([f3323d5](https://github.com/lhvision/helpers/commit/f3323d5c4382914de8e1e16da96b38e9a770c5cc))
+* 新增 clipboard 相关函数 pasteImage、copyText、readText，监听页面可见性函数 watchVisibility ([cad5072](https://github.com/lhvision/helpers/commit/cad50725f7e595dac979609da0f857b62b31e7b2))
+* 新增 getEyeDropperColor 函数，优化 audio 生成频谱图类 ([ab387b7](https://github.com/lhvision/helpers/commit/ab387b79c28ad05191860763889b45d56760f632))
+
+
+
 ## [2.0.6](https://github.com/lhvision/helpers/compare/v2.0.5...v2.0.6) (2024-11-12)
 
 
