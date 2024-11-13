@@ -1,10 +1,17 @@
 {
   "compilerOptions": {
+    // 启用项目引用功能，允许将 TypeScript 程序分割成更小的部分
     "composite": true,
+    // 使用 ESNext 模块系统（最新的 ECMAScript 模块语法）
     "module": "ESNext",
+    // 指定模块解析策略为 "bundler"，适用于 Vite 等打包工具
     "moduleResolution": "bundler",
+    // 启用所有严格的类型检查选项
     "strict": true,
+    // 允许导入没有默认导出的模块时使用默认导入语法
+    // 例如：允许 import React from 'react' 而不是 import * as React from 'react'
     "allowSyntheticDefaultImports": true,
+    // 跳过对声明文件（.d.ts）的类型检查，可以提升编译性能
     "skipLibCheck": true
   },
   "include": ["vite.config.ts"]
