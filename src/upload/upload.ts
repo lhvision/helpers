@@ -265,7 +265,7 @@ export async function uploadFileInChunks(
     }
   }
   catch (error) {
-    throw new Error(`文件处理失败: ${error instanceof Error ? error.message : String(error)}`)
+    throw new Error(`Failed to process file: ${error}`)
   }
   finally {
     // hashStream -----> TransformStream -----> reader
@@ -278,7 +278,7 @@ export async function uploadFileInChunks(
       // await reader.cancel()
     }
     catch (e) {
-      console.warn('释放读取器锁失败:', e)
+      console.warn('Failed to release reader lock:', e)
     }
 
     // 再取消流，判断流是否被锁定
@@ -287,7 +287,7 @@ export async function uploadFileInChunks(
         await hashStream?.cancel()
       }
       catch (e) {
-        console.warn('取消哈希流失败:', e)
+        console.warn('Failed to cancel hash stream:', e)
       }
     }
   }

@@ -1,4 +1,5 @@
 export * from './audioVisualizers/audioVisualizer'
+export * from './clipboard'
 export * from './download'
 export * from './eyeDropper'
 export * from './fullScreen'

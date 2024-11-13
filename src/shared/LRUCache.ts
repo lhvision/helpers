@@ -133,7 +133,7 @@ export class AsyncLRUCache<K, V> extends LRUCache<K, V> {
    * @param key 键
    * @returns 包含值的Promise
    */
-  async getAsync(key: K): Promise<V> {
+  getAsync(key: K): Promise<V> {
     const cachedValue = this.get(key)
     if (cachedValue !== undefined) {
       return Promise.resolve(cachedValue)

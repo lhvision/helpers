@@ -204,7 +204,7 @@ describe('文件上传测试', () => {
       await expect(uploadFileInChunks(testFile, mockHandlers, {
         chunkSize: 5,
         exitOnError: true,
-      })).rejects.toThrow('文件处理失败')
+      })).rejects.toThrow('Failed to process file: Error')
     })
 
     it('应该正确清理资源', async () => {

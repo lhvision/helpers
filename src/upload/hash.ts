@@ -15,10 +15,8 @@ export async function initHashWASM() {
         isInit = true
       }
     }
-    catch (error: any) {
-      throw new Error(
-        `Failed to load hash-wasm. Please ensure that hash-wasm is installed: pnpm add hash-wasm, ${error?.message}`,
-      )
+    catch (error) {
+      throw new Error(`Failed to load hash-wasm. Please ensure that hash-wasm is installed: pnpm add hash-wasm, ${error}`)
     }
   }
 }
@@ -237,7 +235,7 @@ export async function calculateChunksMD5WithWorkers(
   // 创建 AbortController 用于在发生错误时协调所有 worker 的终止操作
   const abortController = new AbortController()
 
-  const processWorkerChunk = async (
+  const processWorkerChunk = (
     worker: Worker,
     workerIndex: number,
     retriesLeft: number,
