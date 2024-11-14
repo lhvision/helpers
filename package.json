@@ -103,6 +103,6 @@
     "pre-commit": "pnpm lint-staged && git add . && pnpm test"
   },
   "lint-staged": {
-    "*": "pnpm lint-staged"
+    "*": "oxlint . --fix -D correctness --ignore-path .gitignore && eslint . --fix"
   }
 }

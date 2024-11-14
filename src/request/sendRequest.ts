@@ -230,7 +230,7 @@ function createRequest() {
 }
 
 /**
- * 依赖于 fetch 的请求函数，RequestManager 单例管理，功能包含：
+ * 基于 fetch 的请求函数，RequestManager 单例管理，功能包含：
  * 1. 第二个泛型 Config 支持按需配置返回值类型，默认 { returnData: true }，返回为 T 类型
  * 2. 并发控制，默认不做限制，可以使用 RequestManager.setMaxConcurrent 设置最大并发数
  * 3. 支持配置缓存
