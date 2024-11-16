@@ -1,3 +1,17 @@
+## [2.0.8](https://github.com/lhvision/helpers/compare/v2.0.7...v2.0.8) (2024-11-16)
+
+
+### Features
+
+* 移除产物不必要的 class jsdoc，打包配置 target 调整为 esnext，新增 binarySearch 相关函数 ([c72d51d](https://github.com/lhvision/helpers/commit/c72d51d00307c7f867a1ec4128bef809927c152e))
+
+
+### BREAKING CHANGES
+
+* 打包配置 target 调整为 esnext
+
+
+
 ## [2.0.7](https://github.com/lhvision/helpers/compare/v2.0.6...v2.0.7) (2024-11-13)
 
 
