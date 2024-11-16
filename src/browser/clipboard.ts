@@ -42,52 +42,42 @@ export function readText() {
   return navigator.clipboard.readText()
 }
 
-type CopyFunction = (text: string) => Promise<boolean>
-
-function createModernCopy(): CopyFunction {
-  return async (text: string) => {
-    await navigator.clipboard.writeText(text)
-    return true
-  }
-}
-
-function createLegacyCopy(): CopyFunction {
-  return async (text: string) => {
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
-    const result = document.execCommand('copy')
-    document.body.removeChild(textarea)
-    return result
-  }
-}
-
-let copyImpl: CopyFunction | null = null
-
 /**
  * 复制文本
  * @param text 文本
  * @returns 是否成功
  */
 export async function copyText(text: string): Promise<boolean> {
-  if (!copyImpl) {
-    try {
-      // 测试现代 API 是否可用
-      await navigator.clipboard.writeText('test')
-      copyImpl = createModernCopy()
-    }
-    catch {
-      copyImpl = createLegacyCopy()
-    }
-  }
-
   try {
-    return await copyImpl(text)
+    await navigator.clipboard.writeText(text)
+    return true
   }
   catch {
     return false
   }
 }
+
+// type CopyFunction = (text: string) => Promise<boolean>
+
+// function createModernCopy(): CopyFunction {
+//   return async (text: string) => {
+//     await navigator.clipboard.writeText(text)
+//     return true
+//   }
+// }
+
+// function createLegacyCopy(): CopyFunction {
+//   return async (text: string) => {
+//     const textarea = document.createElement('textarea')
+//     textarea.value = text
+//     textarea.style.position = 'fixed'
+//     textarea.style.opacity = '0'
+//     document.body.appendChild(textarea)
+//     textarea.select()
+//     const result = document.execCommand('copy')
+//     document.body.removeChild(textarea)
+//     return result
+//   }
+// }
+
+// let copyImpl: CopyFunction | null = null

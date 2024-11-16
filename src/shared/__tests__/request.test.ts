@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { RequestManager } from '../requestManager'
-import { request } from '../sendRequest'
+import { request, RequestManager } from '../request'
 
 describe('请求模块测试', () => {
   let manager: RequestManager

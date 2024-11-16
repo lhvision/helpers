@@ -237,7 +237,6 @@ export class RequestManager {
         })
       })
     }
-
     // 执行请求
     this.currentRequests++
     try {

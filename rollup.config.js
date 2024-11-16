@@ -14,16 +14,18 @@ function deleteFolderPlugin(folderPath) {
   }
 }
 
+const inputDirector = ['browser', 'node', 'shared', 'upload']
+
+const input = inputDirector.reduce((acc, cur) => {
+  acc[cur] = resolve(rootDir, `dist/types/${cur}/index.d.ts`)
+  return acc
+}, {
+  index: resolve(rootDir, 'dist/types/index.d.ts'),
+})
+
 export default [
   {
-    input: {
-      index: resolve(rootDir, 'dist/types/index.d.ts'),
-      browser: resolve(rootDir, 'dist/types/browser/index.d.ts'),
-      node: resolve(rootDir, 'dist/types/node/index.d.ts'),
-      shared: resolve(rootDir, 'dist/types/shared/index.d.ts'),
-      upload: resolve(rootDir, 'dist/types/upload/index.d.ts'),
-      request: resolve(rootDir, 'dist/types/request/index.d.ts'),
-    },
+    input,
     output: {
       dir: resolve(rootDir, 'dist'),
       format: 'es',

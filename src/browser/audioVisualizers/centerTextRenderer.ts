@@ -1,8 +1,21 @@
 import type { CenterTextConfig } from './audioTypes'
 
+interface CenterTextCache {
+  /** 上次更新时间 */
+  lastUpdateTime: number
+  /** 上次时间字符串 */
+  lastTimeString: string
+  /** 上次日期字符串 */
+  lastDateString: string
+  /** 上次自定义文本 */
+  lastCustomText: string
+  /** 自定义文本动画开始时间 */
+  customTextAnimationStart: number
+}
+
 /** 时间、日期、自定义文本渲染器 */
 export class CenterTextRenderer {
-  private cache = {
+  private cache: CenterTextCache = {
     lastTimeString: '',
     lastDateString: '',
     lastUpdateTime: 0,

@@ -33,10 +33,6 @@
     "./upload": {
       "types": "./dist/upload.d.ts",
       "import": "./dist/upload.js"
-    },
-    "./request": {
-      "types": "./dist/request.d.ts",
-      "import": "./dist/request.js"
     }
   },
   "main": "./dist/index.js",
@@ -75,9 +71,14 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^3.8.0",
+    "@babel/core": "^7.26.0",
+    "@babel/generator": "^7.26.2",
+    "@babel/parser": "^7.26.2",
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
     "@commitlint/cz-commitlint": "^19.5.0",
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__generator": "^7.6.8",
     "@types/node": "^22.9.0",
     "commitizen": "^4.3.1",
     "conventional-changelog-cli": "^5.0.0",
