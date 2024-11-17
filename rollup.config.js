@@ -14,7 +14,7 @@ function deleteFolderPlugin(folderPath) {
   }
 }
 
-const inputDirector = ['browser', 'node', 'shared', 'upload']
+const inputDirector = ['browser', 'shared', 'upload']
 
 const input = inputDirector.reduce((acc, cur) => {
   acc[cur] = resolve(rootDir, `dist/types/${cur}/index.d.ts`)

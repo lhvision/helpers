@@ -35,7 +35,7 @@ describe('pLimit', () => {
   it('正确控制并发数', async () => {
     const concurrencyLimit = 2
     const limit = pLimit(concurrencyLimit)
-    const promises = []
+    const promises: Promise<string>[] = []
 
     // 添加多个任务
     for (let i = 0; i < 5; i++)
@@ -69,7 +69,7 @@ describe('pLimit', () => {
   it('遇到错误时正确退出', async () => {
     const concurrencyLimit = 1
     const limit = pLimit(concurrencyLimit, 0, true) // 不重试，遇到错误时退出
-    const promises = []
+    const promises: Promise<string>[] = []
 
     // 模拟一个会抛出错误的任务
     const errorTask = async () => {
@@ -138,7 +138,7 @@ describe('pLimit', () => {
   it('多个任务重试不影响并发限制', async () => {
     const concurrencyLimit = 2
     const limit = pLimit(concurrencyLimit, 1) // 允许重试1次
-    const promises = []
+    const promises: Promise<string>[] = []
 
     // 添加会失败一次的任务和正常任务
     for (let i = 0; i < 3; i++) {

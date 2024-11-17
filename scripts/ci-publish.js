@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { argv, exit } from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { colorLog } from '@lhvision/helpers/node'
+import chalk from 'chalk'
 import { $ } from 'zx'
 
 const args = argv.slice(2)
@@ -38,7 +38,7 @@ async function updateVersion() {
   const currentVersion = incrementVersion(packageJson.version, releaseType)
   packageJson.version = currentVersion
   await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`)
-  colorLog(`版本已更新为 ${currentVersion}`, 'success')
+  chalk.green(`版本已更新为 ${currentVersion}`)
   return currentVersion
 }
 
@@ -52,14 +52,14 @@ async function main() {
   await $`git tag v${currentVersion}`
 
   await $`pnpm publish --access public --registry https://registry.npmjs.org`
-  colorLog('发布成功!', 'success')
+  chalk.green('发布成功!')
 
   await $`git push origin HEAD`
   await $`git push origin v${currentVersion}`
-  colorLog('推送代码成功!', 'success')
+  chalk.green('推送代码成功!')
 }
 
 main().catch((error) => {
-  colorLog(`Error: ${error.message}`, 'error')
+  chalk.red(`Error: ${error.message}`)
   exit(1)
 })

@@ -2,7 +2,6 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { argv, cwd, exit } from 'node:process'
-import { colorLog } from '@lhvision/helpers/node'
 
 function showHelp() {
   // eslint-disable-next-line no-console
@@ -35,7 +34,7 @@ else if (args.includes('-s') || args.includes('--stream')) {
   targetMkdir = args[1] || targetMkdir
 }
 else {
-  colorLog('Error: Please specify either -c/--chunk or -s/--stream to select a worker type', 'error')
+  console.error('Error: Please specify either -c/--chunk or -s/--stream to select a worker type')
   showHelp()
 }
 
@@ -108,10 +107,11 @@ async function main() {
 
   // 将选择的 Worker 代码写入到目标文件
   await writeFile(targetPath, workerCode, 'utf-8')
-  colorLog(`${fileName} created in ${targetMkdir} directory`, 'success')
+  // eslint-disable-next-line no-console
+  console.log(`${fileName} created in ${targetMkdir} directory`)
 }
 
 main().catch((error) => {
-  colorLog(`Error: ${error.message}`, 'error')
+  console.error(`Error: ${error.message}`)
   exit(1)
 })

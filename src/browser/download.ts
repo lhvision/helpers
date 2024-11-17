@@ -1,4 +1,4 @@
-import { processBinaryStream } from './stream'
+import { processBinaryStream } from '../shared/stream'
 
 export function downloadUrl(url: string, filename?: string) {
   const a = document.createElement('a')

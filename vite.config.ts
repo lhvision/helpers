@@ -1,5 +1,5 @@
-import type { Plugin } from 'vite'
 /// <reference types="vitest" />
+import type { Plugin } from 'vite'
 import { readdirSync, statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -21,6 +21,10 @@ function findEntriesWithIndexTs(baseDir: string): Record<string, string> {
   const items = readdirSync(baseDir) // 读取 src 的第一层内容
 
   for (const item of items) {
+    // 排除 node 目录
+    if (item === 'node')
+      continue
+
     const itemPath = join(baseDir, item) // 构造完整路径
     const stats = statSync(itemPath)
 
@@ -59,15 +63,11 @@ function removeClassCommentsPlugin(options: RemoveClassCommentsOptions = {}): Pl
     apply: 'build', // 只在构建时应用
     // enforce: 'pre', // 在其他插件之前运行
     transform(code, id) {
-      // eslint-disable-next-line node/prefer-global/process
-      if (process.env.NODE_ENV === 'development')
-        return
-
       // 检查文件是否需要处理
       if (!include.some(ext => id.endsWith(ext)))
-        return
+        return null
       if (exclude.some(path => id.includes(path)))
-        return
+        return null
 
       try {
         const ast = parse(code, {
@@ -75,6 +75,21 @@ function removeClassCommentsPlugin(options: RemoveClassCommentsOptions = {}): Pl
           plugins: ['typescript', 'decorators-legacy'],
           sourceFilename: id,
         })
+        // 检查文件是否包含类声明
+        let hasClass = false
+        traverse(ast, {
+          ClassDeclaration() {
+            hasClass = true
+          },
+          // 也检查类表达式
+          ClassExpression() {
+            hasClass = true
+          },
+        })
+
+        // 如果没有类声明，直接返回原代码
+        if (!hasClass)
+          return null
 
         traverse(ast, {
           // 处理类方法的注释
@@ -136,8 +151,6 @@ export default defineConfig({
     // emptyOutDir: !isDev,
     lib: {
       entry,
-      name: '@lhvision/helpers',
-
       formats: ['es'],
     },
     rollupOptions: {
