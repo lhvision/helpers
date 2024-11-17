@@ -1,10 +1,10 @@
 <div align="center">
 
-[![Ameth](https://raw.githubusercontent.com/lhvision/lhvision/main/images/Ameth.png)](https://github.com/lhvision/vscode-settings)
+[![Ameth](https://raw.githubusercontent.com/lhvision/lhvision/main/images/Ameth.png)](https://github.com/lhvision/helpers)
 
 # @lhvision/helpers
 
-_✨ 一些简单实用的工具函数封装 ✨_
+_✨ 一些简单的工具函数封装 ✨_
 
 </div>
 
@@ -94,6 +94,12 @@ import { } from '@lhvision/helpers/upload'
 - `debounce` - 防抖
 - `throttle` - 节流
 - `pLimit` - 并发限制
+
+### 日期处理
+
+- `getTimeRemaining` - 计算两个时间点之间的时间差
+- `formatCountdown` - 格式化时间差显示
+- `getDayOfYear` - 某一个日期在当年的第几天
 
 ## upload.js
 

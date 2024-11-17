@@ -1,4 +1,5 @@
 export * from './byte'
+export * from './day'
 export * from './delay'
 export * from './LRUCache'
 export * from './pLimit'
