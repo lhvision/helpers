@@ -1,3 +1,12 @@
+## [2.0.9](https://github.com/lhvision/helpers/compare/v2.0.8...v2.0.9) (2024-11-17)
+
+
+### Features
+
+* 移除 node 模块 ([4e8923c](https://github.com/lhvision/helpers/commit/4e8923c34f42692fcb31f16e678171a3a1e53a2a))
+
+
+
 ## [2.0.8](https://github.com/lhvision/helpers/compare/v2.0.7...v2.0.8) (2024-11-16)
 
 
