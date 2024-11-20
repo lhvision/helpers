@@ -1,3 +1,12 @@
+# [2.1.0](https://github.com/lhvision/helpers/compare/v2.0.10...v2.1.0) (2024-11-20)
+
+
+### Features
+
+* 新增使用 BroadcastChannel 实现跨标签页通信类 TabCommunication ([32491ac](https://github.com/lhvision/helpers/commit/32491ac214548ca26ae164472eb784a413aea8a3))
+
+
+
 ## [2.0.10](https://github.com/lhvision/helpers/compare/v2.0.9...v2.0.10) (2024-11-17)
 
 
