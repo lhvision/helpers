@@ -1,4 +1,4 @@
-import type { DefaultResponseConfig, RequestOptions, RequestResponse, ResponseTypeConfig } from './requestManager'
+import type { DataOnlyConfig, RequestOptions, RequestResponse, ResponseTypeConfig } from './requestManager'
 import { RequestError, RequestManager } from './requestManager'
 
 const defaultRequestOptions: RequestOptions = {
@@ -9,7 +9,7 @@ const defaultRequestOptions: RequestOptions = {
   returnData: true,
 }
 
-async function sendRequest<T = any, R extends ResponseTypeConfig = DefaultResponseConfig>(
+async function sendRequest<T = any, R extends ResponseTypeConfig = DataOnlyConfig>(
   url: string,
   options: RequestOptions = {},
 ): Promise<RequestResponse<T, R>> {
@@ -164,7 +164,7 @@ function resolveRequestBody(data?: HttpBody): {
 }
 
 /** 处理带请求体的方法（POST、PUT 等） */
-function requestWithBody<T = any, R extends ResponseTypeConfig = DefaultResponseConfig>(
+function requestWithBody<T = any, R extends ResponseTypeConfig = DataOnlyConfig>(
   method: 'POST' | 'PUT',
   url: string,
   data?: HttpBody,
@@ -186,21 +186,21 @@ function requestWithBody<T = any, R extends ResponseTypeConfig = DefaultResponse
 }
 
 function createRequest() {
-  const requestFn = <T = any, R extends ResponseTypeConfig = DefaultResponseConfig>(
+  const requestFn = <T = any, R extends ResponseTypeConfig = DataOnlyConfig>(
     url: string,
     options?: RequestOptions,
   ) => {
     return sendRequest<T, R>(url, options)
   }
 
-  requestFn.get = <T = any, R extends ResponseTypeConfig = DefaultResponseConfig>(
+  requestFn.get = <T = any, R extends ResponseTypeConfig = DataOnlyConfig>(
     url: string,
     options?: RequestOptions,
   ) => {
     return sendRequest<T, R>(url, { ...options, method: 'GET' })
   }
 
-  requestFn.post = <T = any, R extends ResponseTypeConfig = DefaultResponseConfig>(
+  requestFn.post = <T = any, R extends ResponseTypeConfig = DataOnlyConfig>(
     url: string,
     data?: HttpBody,
     options?: RequestOptions,
@@ -208,7 +208,7 @@ function createRequest() {
     return requestWithBody<T, R>('POST', url, data, options)
   }
 
-  requestFn.put = <T = any, R extends ResponseTypeConfig = DefaultResponseConfig>(
+  requestFn.put = <T = any, R extends ResponseTypeConfig = DataOnlyConfig>(
     url: string,
     data?: HttpBody,
     options?: RequestOptions,
@@ -216,7 +216,7 @@ function createRequest() {
     return requestWithBody<T, R>('PUT', url, data, options)
   }
 
-  requestFn.delete = <T = any, R extends ResponseTypeConfig = DefaultResponseConfig>(
+  requestFn.delete = <T = any, R extends ResponseTypeConfig = DataOnlyConfig>(
     url: string,
     options?: RequestOptions,
   ) => {

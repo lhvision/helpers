@@ -1,6 +1,6 @@
 type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
-// 请求配置接口，扩展自 fetch 的 RequestInit
+/** 请求配置接口，扩展自 fetch 的 RequestInit */
 export interface RequestOptions extends RequestInit {
   /** 基础URL，会与请求URL拼接 */
   baseURL?: string
@@ -45,19 +45,35 @@ interface Response<T = any> {
   headers: Headers
 }
 
-export type ResponseTypeConfig = { rawResponse: true } | { returnData: false } | { returnData: true }
+/** 直接返回原始 Response 对象 */
+export interface RawResponseConfig {
+  rawResponse: true
+  returnData?: never
+}
 
-export interface DefaultResponseConfig {
+/** 返回完整的 Response 对象 */
+export interface FullResponseConfig {
+  rawResponse?: never
+  returnData: false
+}
+
+/** 返回响应数据 */
+export interface DataOnlyConfig {
+  rawResponse?: never
   returnData: true
 }
 
-export type RequestResponse<T, Config extends ResponseTypeConfig> = Config extends { rawResponse: true }
+/** 响应类型配置 */
+export type ResponseTypeConfig = RawResponseConfig | FullResponseConfig | DataOnlyConfig
+
+/** 请求响应类型 */
+export type RequestResponse<T, Config extends ResponseTypeConfig> = Config extends RawResponseConfig
   ? globalThis.Response
-  : Config extends { returnData: false }
+  : Config extends FullResponseConfig
     ? Response<T>
     : T
 
-// 自定义请求错误类
+/** 自定义请求错误类 */
 export class RequestError extends Error {
   constructor(
     /** 错误信息 */
@@ -117,6 +133,7 @@ interface InterceptorGroup {
   /** 错误拦截器 */
   error?: ErrorInterceptor
 }
+
 /** 拦截器注册器类 */
 class InterceptorRegistry {
   private interceptorMap = new Map<string, InterceptorGroup>()
