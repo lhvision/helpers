@@ -101,11 +101,7 @@ import { } from '@lhvision/helpers/upload'
 
 ### upload.js
 
-文件上传相关功能。
-
-#### Thanks
-
-哈希计算功能基于 [hash-wasm](https://github.com/Daninet/hash-wasm) 实现，感谢该项目提供的优秀 WebAssembly 哈希算法实现。
+文件上传相关功能，哈希计算功能基于 [hash-wasm](https://github.com/Daninet/hash-wasm) 实现。
 
 #### 哈希计算
 
@@ -128,4 +124,4 @@ import { } from '@lhvision/helpers/upload'
 
 ## License
 
-[MIT](./LICENSE) License &copy; 2024 [lhvision](https://github.com/lhvision)
+[MIT](./LICENSE) License &copy; 2024-PRESENT [lhvision](https://github.com/lhvision)

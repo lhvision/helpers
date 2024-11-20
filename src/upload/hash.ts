@@ -88,12 +88,12 @@ export interface ChunkWorkerMessage {
   chunkSize: number
 }
 
-export interface SharedWorkerMessage {
-  index: number
-  chunkStart: number
-  chunkEnd: number
-  blob: Blob
-}
+// export interface SharedWorkerMessage {
+//   index: number
+//   chunkStart: number
+//   chunkEnd: number
+//   blob: Blob
+// }
 
 export interface ChunkHashResult {
   index: number
