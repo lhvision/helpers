@@ -145,7 +145,7 @@ export default defineConfig({
     !isDev && removeClassCommentsPlugin({ sourcemap: false }),
   ],
   build: {
-    target: 'esnext',
+    target: 'node20',
     sourcemap: isDev,
     // 构建时清空目录
     // emptyOutDir: !isDev,

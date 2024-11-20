@@ -47,12 +47,6 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
 
-      # 安装和激活 pnpm
-      - name: Setup pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@9.9.0 --activate
-
       - name: Install dependencies and build
         run: |
           pnpm install --frozen-lockfile
