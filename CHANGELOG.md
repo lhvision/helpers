@@ -1,3 +1,12 @@
+## [2.1.1](https://github.com/lhvision/helpers/compare/v2.1.0...v2.1.1) (2024-11-22)
+
+
+### Features
+
+* 新增 eventBus 配合 request 可以实现在拦截器中路由跳转等功能，从而解耦代码 ([75fd934](https://github.com/lhvision/helpers/commit/75fd934f5e9f0927f942423b50de05ae59eb539a))
+
+
+
 # [2.1.0](https://github.com/lhvision/helpers/compare/v2.0.10...v2.1.0) (2024-11-20)
 
 
