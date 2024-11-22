@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { request, RequestManager } from '../request'
+import { request, requestManager } from '../request'
 
 describe('请求模块测试', () => {
-  let manager: RequestManager
+  // let manager: RequestManager
 
   beforeEach(() => {
     // 重置单例实例和清理 mock
-    manager = RequestManager.getInstance()
-    manager.clearCache()
+    // manager = RequestManager.getInstance()
+    requestManager.clearCache()
     vi.restoreAllMocks()
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -19,8 +19,8 @@ describe('请求模块测试', () => {
   })
 
   it('requestManager 应该是单例模式', () => {
-    const instance1 = RequestManager.getInstance()
-    const instance2 = RequestManager.getInstance()
+    const instance1 = requestManager
+    const instance2 = requestManager
     expect(instance1).toBe(instance2)
   })
 
@@ -29,15 +29,15 @@ describe('请求模块测试', () => {
     const responseInterceptor = (response: any) => response
     const errorInterceptor = (error: any) => error
 
-    manager.registerInterceptors('test', {
+    requestManager.registerInterceptors('test', {
       request: requestInterceptor,
       response: responseInterceptor,
       error: errorInterceptor,
     })
 
-    expect(manager.getInterceptors('test').request).toBe(requestInterceptor)
-    expect(manager.getInterceptors('test').response).toBe(responseInterceptor)
-    expect(manager.getInterceptors('test').error).toBe(errorInterceptor)
+    expect(requestManager.getInterceptors('test').request).toBe(requestInterceptor)
+    expect(requestManager.getInterceptors('test').response).toBe(responseInterceptor)
+    expect(requestManager.getInterceptors('test').error).toBe(errorInterceptor)
   })
 
   it('request 函数应该能成功发送GET请求', async () => {
@@ -209,7 +209,7 @@ describe('请求模块测试', () => {
     })
 
     // 添加请求拦截器
-    manager.registerInterceptors('api.example.com', {
+    requestManager.registerInterceptors('api.example.com', {
       request: (config: any) => {
         return {
           ...config,
@@ -239,7 +239,7 @@ describe('请求模块测试', () => {
     globalThis.fetch = vi.fn().mockRejectedValue(mockError)
 
     let interceptedError: Error | null = null
-    manager.registerInterceptors('api.example.com', {
+    requestManager.registerInterceptors('api.example.com', {
       error: (error: Error) => {
         interceptedError = error
         throw error

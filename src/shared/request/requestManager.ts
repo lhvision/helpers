@@ -170,10 +170,9 @@ class InterceptorRegistry {
   }
 }
 
-/** 请求管理器类 - 使用单例模式 */
-export class RequestManager {
+class RequestManager {
   /** 单例实例 */
-  private static instance: RequestManager
+  // private static instance: RequestManager
   /** 拦截器注册器 */
   private interceptorRegistry = new InterceptorRegistry()
   /** 缓存存储，使用 Map 结构存储请求结果 */
@@ -186,12 +185,12 @@ export class RequestManager {
   private queue: Array<() => Promise<any>> = []
 
   /** 获取单例实例 */
-  static getInstance() {
-    if (!RequestManager.instance) {
-      RequestManager.instance = new RequestManager()
-    }
-    return RequestManager.instance
-  }
+  // static getInstance() {
+  //   if (!RequestManager.instance) {
+  //     RequestManager.instance = new RequestManager()
+  //   }
+  //   return RequestManager.instance
+  // }
 
   /** 注册域名特定的拦截器组 */
   registerInterceptors(domain: string, group: InterceptorGroup) {
@@ -269,3 +268,6 @@ export class RequestManager {
     }
   }
 }
+
+/** 请求管理器类 - 使用单例模式 */
+export const requestManager = new RequestManager()

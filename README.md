@@ -71,14 +71,9 @@ import { } from '@lhvision/helpers/upload'
 
 通用工具函数。
 
-#### 缓存
-
-- `AsyncLRUCache` - 异步 LRU 缓存
-- `LRUCache` - LRU 缓存
-
 #### 请求处理
 
-- `RequestManager` - 请求管理器
+- `requestManager` - 单例请求管理器
 - `request` - 请求函数
 
 #### 流处理
@@ -98,6 +93,12 @@ import { } from '@lhvision/helpers/upload'
 - `getTimeRemaining` - 计算两个时间点之间的时间差
 - `formatCountdown` - 格式化时间差显示
 - `getDayOfYear` - 某一个日期在当年的第几天
+
+#### 其他
+
+- `AsyncLRUCache` - 异步 LRU 缓存
+- `LRUCache` - LRU 缓存
+- `eventBus` - 单例事件总线，可以实现在响应拦截器中路由跳转等功能
 
 ### upload.js
 

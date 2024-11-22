@@ -1,5 +1,5 @@
 import type { DataOnlyConfig, RequestOptions, RequestResponse, ResponseTypeConfig } from './requestManager'
-import { RequestError, RequestManager } from './requestManager'
+import { RequestError, requestManager } from './requestManager'
 
 const defaultRequestOptions: RequestOptions = {
   baseURL: '',
@@ -14,7 +14,7 @@ async function sendRequest<T = any, R extends ResponseTypeConfig = DataOnlyConfi
   options: RequestOptions = {},
 ): Promise<RequestResponse<T, R>> {
   // 获取请求管理器实例
-  const manager = RequestManager.getInstance()
+  // const manager = RequestManager.getInstance()
   // 合并默认配置
   const mergedOptions = { ...defaultRequestOptions, ...options }
   const {
@@ -32,13 +32,13 @@ async function sendRequest<T = any, R extends ResponseTypeConfig = DataOnlyConfi
   // 检查缓存
   if (cacheConfig?.enable) {
     const cacheKey = cacheConfig.key || `${baseURL}${url}`
-    const cachedData = manager.getCache(cacheKey)
+    const cachedData = requestManager.getCache(cacheKey)
     if (cachedData)
       return cachedData
   }
 
   // 获取该 URL 对应的拦截器组
-  const interceptors = manager.getInterceptors(fullUrl)
+  const interceptors = requestManager.getInterceptors(fullUrl)
 
   // 应用请求拦截器
   let finalOptions = { ...fetchOptions }
@@ -92,7 +92,7 @@ async function sendRequest<T = any, R extends ResponseTypeConfig = DataOnlyConfi
 
       // 设置缓存
       if (cacheConfig?.enable)
-        manager.setCache(`${baseURL}${url}`, finalResponse, cacheConfig.ttl!)
+        requestManager.setCache(`${baseURL}${url}`, finalResponse, cacheConfig.ttl!)
 
       return returnData ? finalResponse.data : finalResponse
     }
@@ -129,7 +129,7 @@ async function sendRequest<T = any, R extends ResponseTypeConfig = DataOnlyConfi
   }
 
   // 通过请求管理器执行请求
-  return manager.executeRequest(() => executeRequest())
+  return requestManager.executeRequest(() => executeRequest())
 }
 
 type HttpBody = BodyInit | Record<string, any> | null
