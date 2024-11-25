@@ -270,4 +270,5 @@ class RequestManager {
 }
 
 /** 请求管理器类 - 使用单例模式 */
+// export const requestManager = singleton(RequestManager)
 export const requestManager = new RequestManager()

@@ -99,6 +99,7 @@ import { } from '@lhvision/helpers/upload'
 - `AsyncLRUCache` - 异步 LRU 缓存
 - `LRUCache` - LRU 缓存
 - `eventBus` - 单例事件总线，可以实现在响应拦截器中路由跳转等功能
+- `singleton` - 使用 Proxy 代理模式实现单例模式
 
 ### upload.js
 
