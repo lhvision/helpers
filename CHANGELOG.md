@@ -1,3 +1,12 @@
+## [2.1.4](https://github.com/lhvision/helpers/compare/v2.1.3...v2.1.4) (2024-11-27)
+
+
+### Features
+
+* 新增 css 主题切换函数 setTheme initThemeListener ([54ee39d](https://github.com/lhvision/helpers/commit/54ee39d56a7bbe231b388f1eba71d916a61e2880))
+
+
+
 ## [2.1.3](https://github.com/lhvision/helpers/compare/v2.1.2...v2.1.3) (2024-11-27)
 
 
