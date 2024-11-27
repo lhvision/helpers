@@ -66,6 +66,8 @@ import { } from '@lhvision/helpers/upload'
 - `CenterTextRenderer` - 居中文本渲染器
 - `getEyeDropperColor` - 获取屏幕取色器颜色
 - `canvasToImage` - 将 Canvas 转换为高清图片
+- `setTheme` - 设置主题 dark 或 light
+- `initThemeListener` - 初始化主题监听器，设置 dark 或 light 主题
 
 ### shared.js
 

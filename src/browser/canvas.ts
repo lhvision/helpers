@@ -19,10 +19,12 @@ export function canvasToImage(
 
   // 设置临时 canvas 尺寸
   tempCanvas.width = canvas.width * dpr
+  // 设置临时 canvas 高度
   tempCanvas.height = canvas.height * dpr
 
-  // 配置临时上下文
+  // 启用图像平滑
   tempCtx.imageSmoothingEnabled = true
+  // 设置图像平滑质量
   tempCtx.imageSmoothingQuality = 'high'
 
   // 缩放以适应设备像素比
