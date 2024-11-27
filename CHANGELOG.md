@@ -1,3 +1,12 @@
+## [2.1.2](https://github.com/lhvision/helpers/compare/v2.1.1...v2.1.2) (2024-11-27)
+
+
+### Features
+
+* 新增使用 Proxy 代理模式实现单例模式函数 singleton ([0f3ce8f](https://github.com/lhvision/helpers/commit/0f3ce8fef495c565a18b6237b4c574329813fda8))
+
+
+
 ## [2.1.1](https://github.com/lhvision/helpers/compare/v2.1.0...v2.1.1) (2024-11-22)
 
 
