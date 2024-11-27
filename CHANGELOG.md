@@ -1,3 +1,12 @@
+## [2.1.3](https://github.com/lhvision/helpers/compare/v2.1.2...v2.1.3) (2024-11-27)
+
+
+### Features
+
+* streamDownload 新增断点续传功能，新增 canvasToImage 函数 ([db39e79](https://github.com/lhvision/helpers/commit/db39e799c60f5ed295632dfed73a73b31d9a94fb))
+
+
+
 ## [2.1.2](https://github.com/lhvision/helpers/compare/v2.1.1...v2.1.2) (2024-11-27)
 
 
