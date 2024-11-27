@@ -51,7 +51,6 @@ import { } from '@lhvision/helpers/upload'
 
 - `downloadBlob` - 下载 Blob 数据
 - `downloadUrl` - 下载 URL
-- `downloadWithProgress` - 带进度的下载
 - `streamDownload` - 流式下载
 
 #### 其他
@@ -66,6 +65,7 @@ import { } from '@lhvision/helpers/upload'
 - `AudioVisualizer` - 音频可视化工具
 - `CenterTextRenderer` - 居中文本渲染器
 - `getEyeDropperColor` - 获取屏幕取色器颜色
+- `canvasToImage` - 将 Canvas 转换为高清图片
 
 ### shared.js
 

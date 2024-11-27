@@ -25,49 +25,69 @@ export function downloadBlob(content: string | Blob, filename?: string): void {
   document.body.removeChild(a)
 }
 
-/**
- * 使用流式方式下载文件
- * @param response fetch Response 对象
- * @param filename 保存的文件名
- */
-export async function streamDownload(response: Response, filename?: string) {
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
-  }
-  const chunks: Uint8Array[] = []
-  await processBinaryStream(response, (chunk) => {
-    chunks.push(chunk)
-  })
+interface DownloadResult {
+  loaded: number
+  chunks: Uint8Array[]
+  headers: Headers
+}
 
-  const blob = new Blob(chunks)
-  downloadBlob(blob, filename)
+interface DownloadOptions {
+  filename?: string
+  onProgress?: (progress: number) => void
+  startByte?: number
+  initialChunks?: Uint8Array[]
 }
 
 /**
- * 带进度的文件下载函数
+ * 使用流式方式下载文件，为 response 添加 headers 并传入 startByte、initialChunks 支持断点续传
  * @param response fetch Response 对象
- * @param onProgress 下载进度回调函数，参数为当前下载进度(0-100)
  * @param filename 可选的文件名
+ * @param onProgress 下载进度回调函数，参数为当前下载进度(0-100)
+ * @param startByte 开始下载的字节数
+ * @param initialChunks 初始的已下载字节数组
  */
-export async function downloadWithProgress(
+export function streamDownload(
   response: Response,
-  onProgress: (progress: number) => void,
-  filename?: string,
-) {
+  options?: Pick<DownloadOptions, 'onProgress' | 'filename'>
+): Promise<void>
+export function streamDownload(
+  response: Response,
+  options?: DownloadOptions
+): Promise<DownloadResult>
+export async function streamDownload(
+  response: Response,
+  options?: DownloadOptions,
+): Promise<void | DownloadResult> {
+  const {
+    filename,
+    onProgress,
+    startByte = 0,
+    initialChunks = [],
+  } = options || {}
+
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)
   }
   const total = Number(response.headers.get('content-length'))
-  let loaded = 0
-  const chunks: Uint8Array[] = []
+  let loaded = startByte
+  const chunks: Uint8Array[] = [...initialChunks]
 
-  await processBinaryStream(response, (chunk) => {
-    chunks.push(chunk)
-    loaded += chunk.length
-    const progress = (loaded / total) * 100
-    onProgress(progress)
-  })
+  try {
+    await processBinaryStream(response, (chunk) => {
+      chunks.push(chunk)
+      if (onProgress) {
+        loaded += chunk.length
+        const progress = (loaded / total) * 100
+        onProgress(progress)
+      }
+    })
 
-  const blob = new Blob(chunks)
-  downloadBlob(blob, filename)
+    const blob = new Blob(chunks)
+    downloadBlob(blob, filename)
+  }
+  catch {
+    const headers = new Headers()
+    headers.append('Range', `bytes=${loaded}-`)
+    return { loaded, chunks, headers }
+  }
 }

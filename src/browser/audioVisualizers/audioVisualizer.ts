@@ -1,4 +1,5 @@
 import type { AnimationConfig, VisualizerConfig, VisualizerMode } from './audioTypes'
+import { canvasToImage } from '../canvas'
 import { AnimationController } from './animationController'
 import { AudioDataProcessor } from './audioDataProcessor'
 import { CacheManager } from './cacheManager'
@@ -51,6 +52,7 @@ export class AudioVisualizer {
         enabled: true,
       },
     },
+    barAlignment: 'bottom',
   }
 
   /** 缓存管理器 */
@@ -292,6 +294,16 @@ export class AudioVisualizer {
     // 绘制背景
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
+    // 如果是中间对齐，绘制中线
+    // if (this.config.barAlignment === 'center') {
+    //   this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)' // 中线颜色
+    //   this.ctx.lineWidth = 1
+    //   this.ctx.beginPath()
+    //   this.ctx.moveTo(0, centerY)
+    //   this.ctx.lineTo(this.canvas.width, centerY)
+    //   this.ctx.stroke()
+    // }
+
     // 计算脉冲效果
     const pulseEffect = this.effectsCalculator.calculatePulseEffect()
     // 计算高度倍数
@@ -309,10 +321,15 @@ export class AudioVisualizer {
         const { x, width } = barPositions[i]
         // 计算条形高度
         const barHeight = amplitude * this.canvas.height * this.config.barHeightRatio * heightMultiplier
-        // 绘制单色条形
+
+        // 根据对齐方式计算 y 坐标
+        const y = this.config.barAlignment === 'bottom'
+          ? this.canvas.height - barHeight
+          : centerY - barHeight / 2
+
         this.monochromeRenderer.drawMonochromeBarGradient(
           x,
-          this.canvas.height - barHeight,
+          y,
           width,
           barHeight,
           amplitude,
@@ -338,14 +355,23 @@ export class AudioVisualizer {
         const { x, width } = barPositions[i]
         // 计算条形高度
         const barHeight = amplitude * this.canvas.height * this.config.barHeightRatio * heightMultiplier
-        // 获取渐变
         const { color, gradient } = gradients[i]
+
+        // 根据对齐方式计算渐变的起点和终点
+        const gradientStartY = this.config.barAlignment === 'bottom'
+          ? this.canvas.height - barHeight
+          : centerY - barHeight / 2
+
+        const gradientEndY = this.config.barAlignment === 'bottom'
+          ? this.canvas.height
+          : centerY + barHeight / 2
+
         // 创建线性渐变
         const barGradient = this.ctx.createLinearGradient(
           x,
-          this.canvas.height - barHeight,
+          gradientStartY,
           x,
-          this.canvas.height,
+          gradientEndY,
         )
         // 添加渐变颜色
         gradient.forEach((color, index) => barGradient.addColorStop(index * 0.5, color))
@@ -354,7 +380,12 @@ export class AudioVisualizer {
         // 设置填充样式
         this.ctx.fillStyle = barGradient
         // 绘制条形
-        this.ctx.fillRect(x, this.canvas.height - barHeight, width, barHeight)
+        this.ctx.fillRect(
+          x,
+          this.config.barAlignment === 'bottom' ? this.canvas.height - barHeight : centerY - barHeight / 2,
+          width,
+          barHeight,
+        )
       }
     }
 
@@ -606,6 +637,13 @@ export class AudioVisualizer {
   /** 设置可视化模式 */
   setMode(mode: VisualizerMode) {
     this.mode = mode
+  }
+
+  /**
+   * 将当前 canvas 转换为高清图片
+   */
+  toImage(type?: string, quality?: number): string {
+    return canvasToImage(this.canvas, type, quality)
   }
 
   /** 获取当前状态 */

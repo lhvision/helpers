@@ -53,6 +53,8 @@ export interface VisualizerConfig {
   enableGlow?: boolean
   /** 圆环中心文本配置 */
   centerText?: CenterTextConfig
+  /** 条形图对齐方式 */
+  barAlignment?: 'bottom' | 'center'
 }
 
 export interface AnimationConfig {
