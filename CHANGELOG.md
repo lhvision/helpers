@@ -1,3 +1,12 @@
+## [2.1.5](https://github.com/lhvision/helpers/compare/v2.1.4...v2.1.5) (2024-11-29)
+
+
+### Bug Fixes
+
+* 修复 requst 错误信息没有默认从 response.json().message 中获取，如果没有才是 response.statusText ([0ea46e3](https://github.com/lhvision/helpers/commit/0ea46e3aa98c1b3f50305ee3963dfedbf265e5a1))
+
+
+
 ## [2.1.4](https://github.com/lhvision/helpers/compare/v2.1.3...v2.1.4) (2024-11-27)
 
 
