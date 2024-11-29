@@ -5,6 +5,10 @@ import { calculateChunksMD5, calculateChunksMD5WithWorkers, calculateLargeFileMD
 type UploadedChunk = Pick<ChunkHashResult, 'hash' | 'index'>
 
 interface FileHashOptions {
+  /**
+   * 分片大小
+   * @defaultValue 4 MB
+   */
   chunkSize?: number
   /** 并发数 */
   concurrency?: number
@@ -22,16 +26,15 @@ interface FileHashOptions {
 
 interface UploadResult extends ChunkHashResult {
   uploaded: boolean
-  uploadChunkResponse: any
 }
 
 interface UploadHandlers {
   /** 获取已上传分片 */
   getUploadedChunks?: (fileHash: string) => Promise<UploadedChunk[]>
   /** 上传分片 */
-  uploadChunk: (chunk: ChunkHashResult, fileHash: string) => Promise<any>
+  uploadChunk: (chunk: ChunkHashResult, fileHash: string) => Promise<void>
   /** 合并分片 */
-  mergeChunks: (filename: string, fileHash: string, chunks: UploadedChunk[]) => Promise<any>
+  mergeChunks: <T>(filename: string, fileHash: string, chunks: UploadedChunk[]) => Promise<T>
 }
 
 /**
@@ -137,11 +140,10 @@ export function hashStreamToUploadStream(
     async transform(chunk, controller) {
       // 创建上传任务并用 pLimit 包装以实现并发控制
       const uploadTask = limitedUpload(async () => {
-        const uploadChunkResponse = await uploadChunk(chunk, fileHash)
+        await uploadChunk(chunk, fileHash)
         return {
           ...chunk,
           uploaded: true,
-          uploadChunkResponse,
         }
       })
         .catch((error) => {

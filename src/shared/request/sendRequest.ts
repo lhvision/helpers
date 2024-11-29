@@ -67,12 +67,26 @@ async function sendRequest<T = any, R extends ResponseTypeConfig = DataOnlyConfi
 
       clearTimeout(timeoutId)
 
-      if (!response.ok)
-        throw new RequestError(response.statusText, response.status, response as any)
-
       // 如果需要原始 Response，直接返回
       if (rawResponse) {
         return response as RequestResponse<T, R>
+      }
+
+      if (!response.ok) {
+        let errorData: any
+        try {
+          errorData = await response.json()
+        }
+        catch {
+          errorData = null
+        }
+        throw new RequestError<T>(
+          errorData?.message || response.statusText,
+          response.status,
+          response,
+          undefined,
+          errorData,
+        )
       }
 
       // 解析响应数据

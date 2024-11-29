@@ -74,16 +74,18 @@ export type RequestResponse<T, Config extends ResponseTypeConfig> = Config exten
     : T
 
 /** 自定义请求错误类 */
-export class RequestError extends Error {
+export class RequestError<T = any> extends Error {
   constructor(
     /** 错误信息 */
     public message: string,
     /** HTTP状态码 */
     public status?: number,
     /** 响应 */
-    public response?: Response,
+    public response?: globalThis.Response,
     /** 错误名称 */
     public errorName?: string,
+    /** 错误数据 */
+    public errorData?: T | null,
   ) {
     super(message)
     this.name = errorName || 'RequestError'
