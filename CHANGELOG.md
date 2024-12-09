@@ -1,3 +1,12 @@
+## [2.1.6](https://github.com/lhvision/helpers/compare/v2.1.5...v2.1.6) (2024-12-09)
+
+
+### Features
+
+*  新增 getMonthCalendar 获取月历网格数据函数 ([7f5c1d1](https://github.com/lhvision/helpers/commit/7f5c1d12be3c3bca51a65b0a67ddcc26dd4930f9))
+
+
+
 ## [2.1.5](https://github.com/lhvision/helpers/compare/v2.1.4...v2.1.5) (2024-11-29)
 
 
