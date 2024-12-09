@@ -93,3 +93,79 @@ export function getDayOfYear(date: Date): number {
   const diff = date.getTime() - start.getTime()
   return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1
 }
+
+interface CalendarDay {
+  /** 日期号数 */
+  date: number
+  /** 月份 */
+  month: number
+  /** 年份 */
+  year: number
+  /** 是否属于当前月份 */
+  isCurrentMonth: boolean
+}
+
+/**
+ * 获取月历网格数据
+ * @param year 年份
+ * @param month 月份（1-12）
+ * @param startFromMonday 是否从周一开始
+ * @returns 日历网格数据
+ */
+export function getMonthCalendar(year: number, month: number, startFromMonday?: boolean): CalendarDay[] {
+  const result: CalendarDay[] = []
+
+  // 获取当月第一天
+  const firstDay = new Date(year, month - 1, 1)
+  // 获取当月最后一天
+  const lastDay = new Date(year, month, 0)
+
+  // 获取当月第一天是星期几（0-6，0 表示周日）
+  let firstDayWeek = firstDay.getDay()
+  // 如果是从周一开始，需要调整星期几的值
+  if (startFromMonday) {
+    firstDayWeek = firstDayWeek === 0 ? 6 : firstDayWeek - 1
+  }
+
+  // 添加上月补充日期
+  const prevMonthLastDay = new Date(year, month - 1, 0)
+  const prevMonthDays = prevMonthLastDay.getDate()
+
+  for (let i = firstDayWeek - 1; i >= 0; i--) {
+    result.push({
+      date: prevMonthDays - i,
+      month: month - 1 || 12,
+      year: month === 1 ? year - 1 : year,
+      isCurrentMonth: false,
+    })
+  }
+
+  // 添加当月日期
+  for (let i = 1; i <= lastDay.getDate(); i++) {
+    result.push({
+      date: i,
+      month,
+      year,
+      isCurrentMonth: true,
+    })
+  }
+
+  // 添加下月补充日期
+  let lastDayWeek = lastDay.getDay()
+  // 如果是从周一开始，需要调整星期几的值
+  if (startFromMonday) {
+    lastDayWeek = lastDayWeek === 0 ? 6 : lastDayWeek - 1
+  }
+  const remainingDays = 6 - lastDayWeek
+
+  for (let i = 1; i <= remainingDays; i++) {
+    result.push({
+      date: i,
+      month: month === 12 ? 1 : month + 1,
+      year: month === 12 ? year + 1 : year,
+      isCurrentMonth: false,
+    })
+  }
+
+  return result
+}
