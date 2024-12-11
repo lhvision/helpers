@@ -68,6 +68,8 @@ import { } from '@lhvision/helpers/upload'
 - `canvasToImage` - 将 Canvas 转换为高清图片
 - `setTheme` - 设置主题 dark 或 light
 - `initThemeListener` - 初始化主题监听器，设置 dark 或 light 主题
+- `saveFileInBrowser` - 保存文件到磁盘
+- `openFileInBrowser` - 从磁盘读取文件
 
 ### shared.js
 
