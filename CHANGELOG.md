@@ -1,3 +1,12 @@
+## [2.1.7](https://github.com/lhvision/helpers/compare/v2.1.6...v2.1.7) (2024-12-11)
+
+
+### Features
+
+* 新增浏览器读取与写入文件函数 ([81bc7ec](https://github.com/lhvision/helpers/commit/81bc7ec181c3528ebad1927db3d1816635ada26f))
+
+
+
 ## [2.1.6](https://github.com/lhvision/helpers/compare/v2.1.5...v2.1.6) (2024-12-09)
 
 
