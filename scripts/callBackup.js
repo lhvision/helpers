@@ -10,7 +10,7 @@ function executeFunctionWithContext(context, fn, args) {
   // 执行函数并获取结果
   const result = context[key](...args)
   // 删除临时属性
-  Reflect.deleteProperty(context, key)
+  delete context[key]
   // 返回执行结果
   return result
 }

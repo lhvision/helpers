@@ -2,17 +2,17 @@
  * 初始化主题监听器, 设置 dark 或 light 主题
  * @returns 返回一个函数，用于移除主题监听器
  */
-export function initThemeListener() {
+export function initThemeListener(setThemeCallback: (darkThemeMqMatches?: boolean) => void) {
   // 检查浏览器是否支持主题监听
   if (window.matchMedia) {
     // 创建媒体查询
     const darkThemeMq = window.matchMedia('(prefers-color-scheme: dark)')
 
     // 初始化主题
-    setTheme(darkThemeMq.matches)
+    setThemeCallback(darkThemeMq.matches)
 
     // 添加主题变化监听器
-    const listener = (e: MediaQueryListEvent) => setTheme(e.matches)
+    const listener = (e: MediaQueryListEvent) => setThemeCallback(e.matches)
 
     darkThemeMq.addEventListener('change', listener)
 
@@ -22,12 +22,13 @@ export function initThemeListener() {
 
 /** 设置主题 dark 或 light */
 export function setTheme(isDark?: boolean) {
-  if (isDark) {
-    document.documentElement.classList.add('dark')
-    document.documentElement.classList.remove('light')
-  }
-  else {
-    document.documentElement.classList.add('light')
-    document.documentElement.classList.remove('dark')
-  }
+  document.documentElement.classList.toggle('dark', isDark)
+}
+
+/** 使用 view transition 设置主题 */
+export async function setThemeInViewTransition(isDark?: boolean, startViewTransitionCallback?: () => void) {
+  await document.startViewTransition(() => {
+    setTheme(isDark)
+    startViewTransitionCallback?.()
+  }).ready
 }
