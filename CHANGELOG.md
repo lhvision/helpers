@@ -1,3 +1,12 @@
+## [2.1.8](https://github.com/lhvision/helpers/compare/v2.1.7...v2.1.8) (2024-12-12)
+
+
+### Features
+
+* 改造 theme 函数，新增 setThemeInViewTransition 函数 ([24ee585](https://github.com/lhvision/helpers/commit/24ee585435e8b1492b301b2d27561b8d43d05bb8))
+
+
+
 ## [2.1.7](https://github.com/lhvision/helpers/compare/v2.1.6...v2.1.7) (2024-12-11)
 
 
