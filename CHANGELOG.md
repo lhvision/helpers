@@ -1,3 +1,12 @@
+## [2.1.9](https://github.com/lhvision/helpers/compare/v2.1.8...v2.1.9) (2024-12-12)
+
+
+### Features
+
+* 改造 theme 相关函数 ([22aeeb5](https://github.com/lhvision/helpers/commit/22aeeb54357570c5c06ad759a429731b8feb0c92))
+
+
+
 ## [2.1.8](https://github.com/lhvision/helpers/compare/v2.1.7...v2.1.8) (2024-12-12)
 
 
