@@ -1,3 +1,12 @@
+## [2.1.10](https://github.com/lhvision/helpers/compare/v2.1.9...v2.1.10) (2024-12-19)
+
+
+### Features
+
+* 新增一些查询浏览器存储使用情况的方法 ([83bac70](https://github.com/lhvision/helpers/commit/83bac7073b861968e487123eaab2578389af75eb))
+
+
+
 ## [2.1.9](https://github.com/lhvision/helpers/compare/v2.1.8...v2.1.9) (2024-12-12)
 
 
