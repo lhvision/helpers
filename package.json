@@ -55,6 +55,7 @@
     "lint:oxlint": "oxlint . --fix -D correctness --ignore-path .gitignore",
     "lint:eslint": "eslint . --fix",
     "lint-staged": "run-s lint:*",
+    "lint-config": "eslint --inspect-config",
     "commit": "git-cz",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
     "re-changelog": "pnpm changelog -r 0"

@@ -122,9 +122,12 @@ export function getMonthCalendar(year: number, month: number, startFromMonday?: 
 
   // 获取当月第一天是星期几（0-6，0 表示周日）
   let firstDayWeek = firstDay.getDay()
+  // 获取当月最后一天是星期几（0-6，0 表示周日）
+  let lastDayWeek = lastDay.getDay()
   // 如果是从周一开始，需要调整星期几的值
   if (startFromMonday) {
     firstDayWeek = firstDayWeek === 0 ? 6 : firstDayWeek - 1
+    lastDayWeek = lastDayWeek === 0 ? 6 : lastDayWeek - 1
   }
 
   // 添加上月补充日期
@@ -151,11 +154,6 @@ export function getMonthCalendar(year: number, month: number, startFromMonday?: 
   }
 
   // 添加下月补充日期
-  let lastDayWeek = lastDay.getDay()
-  // 如果是从周一开始，需要调整星期几的值
-  if (startFromMonday) {
-    lastDayWeek = lastDayWeek === 0 ? 6 : lastDayWeek - 1
-  }
   const remainingDays = 6 - lastDayWeek
 
   for (let i = 1; i <= remainingDays; i++) {

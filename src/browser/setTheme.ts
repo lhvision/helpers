@@ -25,7 +25,13 @@ export function setTheme(isDark?: boolean) {
   document.documentElement.classList.toggle('dark', isDark)
 }
 
-/** startViewTransition Api */
-export async function startViewTransition(startViewTransitionCallback: () => void) {
-  await document.startViewTransition(startViewTransitionCallback).ready
+/** startViewTransition Api, 降级处理为直接执行 callback */
+export function startViewTransition<T extends any[]>(callback: (...args: T) => void, ...args: T) {
+  if (document.startViewTransition) {
+    return document.startViewTransition(() => callback(...args)).ready
+  }
+  else {
+    callback(...args)
+    return Promise.resolve()
+  }
 }
