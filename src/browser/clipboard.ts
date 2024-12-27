@@ -1,37 +1,63 @@
+type PasteErrorType = 'READ_ERROR' | 'INVALID_TYPE' | 'NO_FILE'
+
+class PasteError extends Error {
+  constructor(message: string, public type: PasteErrorType) {
+    super(message)
+    this.name = 'PasteError'
+  }
+}
+
 /**
  * 粘贴图片
- * @param el 元素
  * @param onPaste 粘贴事件回调
  * @param onError 错误回调
- * @returns 清理函数
+ * @returns 粘贴事件处理函数
  */
-export function pasteImage(el: HTMLElement, onPaste: (base64: string) => void, onError?: (e: Error) => void) {
-  const pasteHandler = (e: ClipboardEvent) => {
-    if (e.clipboardData?.files.length) {
+export function pasteImage(
+  onPaste: (base64: string) => void,
+  onError?: (error: PasteError) => void,
+) {
+  return async (e: ClipboardEvent) => {
+    try {
+      if (!e.clipboardData?.files.length) {
+        throw new PasteError('No file found in clipboard', 'NO_FILE')
+      }
+
       e.preventDefault()
       const file = e.clipboardData.files[0]
-      // 验证是否为图片文件
+
       if (!file.type.startsWith('image/')) {
-        return
+        throw new PasteError('Invalid file type. Only images are allowed', 'INVALID_TYPE')
       }
 
-      const fileReader = new FileReader()
-      fileReader.onload = (e) => {
-        const base64 = e.target?.result as string
-        onPaste(base64)
-      }
-      // 错误处理
-      fileReader.onerror = (e: any) => {
-        onError?.(e)
-      }
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
 
-      fileReader.readAsDataURL(file)
+        reader.onload = (e) => {
+          if (!e.target?.result) {
+            reject(new PasteError('Failed to read file content', 'READ_ERROR'))
+            return
+          }
+          resolve(e.target.result as string)
+        }
+
+        reader.onerror = () => {
+          reject(new PasteError('Error occurred while reading file', 'READ_ERROR'))
+        }
+
+        reader.readAsDataURL(file)
+      })
+
+      onPaste(base64)
+    }
+    catch (error) {
+      onError?.(
+        error instanceof PasteError
+          ? error
+          : new PasteError('Unexpected error occurred', 'READ_ERROR'),
+      )
     }
   }
-
-  el.addEventListener('paste', pasteHandler)
-
-  return () => el.removeEventListener('paste', pasteHandler)
 }
 
 /**
