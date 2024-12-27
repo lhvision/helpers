@@ -1,3 +1,12 @@
+## [2.1.11](https://github.com/lhvision/helpers/compare/v2.1.10...v2.1.11) (2024-12-27)
+
+
+### Features
+
+* 调整 pasteImage 函数实现，无需传入 el ([19dc24e](https://github.com/lhvision/helpers/commit/19dc24eac50e298811c52d28fc5d2e69e0b61971))
+
+
+
 ## [2.1.10](https://github.com/lhvision/helpers/compare/v2.1.9...v2.1.10) (2024-12-19)
 
 
