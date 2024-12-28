@@ -1,9 +1,7 @@
-type PasteErrorType = 'READ_ERROR' | 'INVALID_TYPE' | 'NO_FILE'
-
 class PasteError extends Error {
-  constructor(message: string, public type: PasteErrorType) {
+  constructor(message: string) {
     super(message)
-    this.name = 'PasteError'
+    this.name = 'READ_ERROR'
   }
 }
 
@@ -20,14 +18,14 @@ export function pasteImage(
   return async (e: ClipboardEvent) => {
     try {
       if (!e.clipboardData?.files.length) {
-        throw new PasteError('No file found in clipboard', 'NO_FILE')
+        return
       }
 
       e.preventDefault()
       const file = e.clipboardData.files[0]
 
       if (!file.type.startsWith('image/')) {
-        throw new PasteError('Invalid file type. Only images are allowed', 'INVALID_TYPE')
+        return
       }
 
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -35,14 +33,14 @@ export function pasteImage(
 
         reader.onload = (e) => {
           if (!e.target?.result) {
-            reject(new PasteError('Failed to read file content', 'READ_ERROR'))
+            reject(new PasteError('Failed to read file content'))
             return
           }
           resolve(e.target.result as string)
         }
 
         reader.onerror = () => {
-          reject(new PasteError('Error occurred while reading file', 'READ_ERROR'))
+          reject(new PasteError('Error occurred while reading file'))
         }
 
         reader.readAsDataURL(file)
@@ -54,7 +52,7 @@ export function pasteImage(
       onError?.(
         error instanceof PasteError
           ? error
-          : new PasteError('Unexpected error occurred', 'READ_ERROR'),
+          : new PasteError('Unexpected error occurred'),
       )
     }
   }

@@ -29,9 +29,9 @@ export async function calculateMD5(buffer: ArrayBuffer): Promise<string> {
 }
 
 function readChunkAsUint8Array(file: Blob): Promise<Uint8Array> {
-  const fileReader = new FileReader()
-
   return new Promise((resolve, reject) => {
+    const fileReader = new FileReader()
+
     fileReader.onload = (e) => {
       resolve(new Uint8Array(e.target?.result as ArrayBuffer))
     }

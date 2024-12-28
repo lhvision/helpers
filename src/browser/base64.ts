@@ -4,14 +4,16 @@
  * @returns Base64 编码字符串
  */
 export function fileToBase64Browser(file: File | Blob): Promise<string> {
-  const reader = new FileReader()
-
   return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+
     reader.onloadend = () => {
       const base64data = reader.result as string
       resolve(base64data)
     }
+
     reader.onerror = reject
+
     reader.readAsDataURL(file)
   })
 }

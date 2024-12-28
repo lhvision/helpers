@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { eventBus } from '../request/eventBus'
+import { eventBus } from '../eventBus'
 
 describe('eventBus', () => {
   beforeEach(() => {
