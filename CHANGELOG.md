@@ -1,3 +1,12 @@
+## [2.1.12](https://github.com/lhvision/helpers/compare/v2.1.11...v2.1.12) (2024-12-28)
+
+
+### Bug Fixes
+
+* 修复 pasteImage 错误的异常处理 ([2541fd1](https://github.com/lhvision/helpers/commit/2541fd1b16e03fe3d713a84915ead16f2b46fdfa))
+
+
+
 ## [2.1.11](https://github.com/lhvision/helpers/compare/v2.1.10...v2.1.11) (2024-12-27)
 
 
