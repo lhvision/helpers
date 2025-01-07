@@ -1,3 +1,12 @@
+## [2.1.13](https://github.com/lhvision/helpers/compare/v2.1.12...v2.1.13) (2025-01-07)
+
+
+### Features
+
+* 移除 FullScreen 兼容性实现，新增 eventBusPromise ([3ee0f98](https://github.com/lhvision/helpers/commit/3ee0f9818c8f3cd424d604a1e078d8025a853ffe))
+
+
+
 ## [2.1.12](https://github.com/lhvision/helpers/compare/v2.1.11...v2.1.12) (2024-12-28)
 
 
