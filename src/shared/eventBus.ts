@@ -91,3 +91,17 @@ class EventBus {
 
 /** 事件总线 - 使用单例模式 */
 export const eventBus = new EventBus()
+
+/** 简单的单发布订阅模式 */
+export function eventBusPromise() {
+  const { promise, resolve } = Promise.withResolvers()
+
+  const onReady = (handler: (...args: any[]) => void) => {
+    promise.then(handler)
+  }
+
+  return {
+    resolve,
+    onReady,
+  }
+}

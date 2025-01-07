@@ -127,4 +127,14 @@ describe('eventBus', () => {
     expect(handler).toHaveBeenCalledTimes(2)
     expect(order).toEqual([2, 1])
   })
+
+  // it('eventBusPromise 应该能正确处理事件', () => {
+  //   const { resolve, onReady } = eventBusPromise()
+
+  //   onReady((a) => {
+  //     expect(a).toBe('test')
+  //   })
+
+  //   resolve('test')
+  // })
 })

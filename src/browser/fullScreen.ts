@@ -1,4 +1,4 @@
-type FullscreenMethod = () => void | Promise<void>
+// type FullscreenMethod = () => void | Promise<void>
 
 /**
  * 处理可能返回 Promise 的全屏方法
@@ -6,38 +6,27 @@ type FullscreenMethod = () => void | Promise<void>
  * @param context - 方法的调用上下文
  * @returns Promise<void>
  */
-function handleFullScreenMethod(method: FullscreenMethod, context: any): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const returnValue = method.call(context)
-    if (returnValue instanceof Promise) {
-      returnValue.then(resolve).catch(reject)
-    }
-    else {
-      resolve()
-    }
-  })
-}
+// function handleFullScreenMethod(method: FullscreenMethod, context: any): Promise<void> {
+//   return new Promise((resolve, reject) => {
+//     const returnValue = method.call(context)
+//     if (returnValue instanceof Promise) {
+//       returnValue.then(resolve).catch(reject)
+//     }
+//     else {
+//       resolve()
+//     }
+//   })
+// }
 
 /**
  * 请求全屏
  * @param element - 需要全屏的元素
  */
-export function requestFullScreen(element: HTMLElement): Promise<void> {
+export function requestFullScreen(element: HTMLElement, options?: FullscreenOptions): Promise<void> {
   if (isFullScreen()) {
     return Promise.resolve()
   }
-
-  const request = element.requestFullscreen
-    || (document as any).webkitRequestFullscreen
-    || (document as any).mozRequestFullScreen
-    || (document as any).msRequestFullscreen
-
-  if (request) {
-    return handleFullScreenMethod(request, element)
-  }
-  else {
-    return Promise.reject(new Error('Fullscreen API is not supported'))
-  }
+  return element.requestFullscreen(options)
 }
 
 /**
@@ -47,18 +36,7 @@ export function exitFullScreen(): Promise<void> {
   if (!isFullScreen()) {
     return Promise.resolve()
   }
-
-  const exit = document.exitFullscreen
-    || (document as any).webkitExitFullscreen
-    || (document as any).mozCancelFullScreen
-    || (document as any).msExitFullscreen
-
-  if (exit) {
-    return handleFullScreenMethod(exit, document)
-  }
-  else {
-    return Promise.reject(new Error('Fullscreen API is not supported'))
-  }
+  return document.exitFullscreen()
 }
 
 /**
@@ -66,10 +44,6 @@ export function exitFullScreen(): Promise<void> {
  */
 export function getFullScreenElement(): Element | null {
   return document.fullscreenElement
-    || (document as any).webkitFullscreenElement
-    || (document as any).mozFullScreenElement
-    || (document as any).msFullscreenElement
-    || null
 }
 
 /**
@@ -84,12 +58,12 @@ export function isFullScreen(): boolean {
  * 切换全屏
  * @param element - 需要全屏的元素
  */
-export async function toggleFullScreen(element: HTMLElement): Promise<void> {
+export async function toggleFullScreen(element: HTMLElement, options?: FullscreenOptions): Promise<void> {
   if (isFullScreen()) {
     await exitFullScreen()
   }
   else {
-    await requestFullScreen(element)
+    await requestFullScreen(element, options)
   }
 }
 
@@ -99,9 +73,6 @@ export async function toggleFullScreen(element: HTMLElement): Promise<void> {
  */
 export function onFullScreenChange(callback: () => void): void {
   document.addEventListener('fullscreenchange', callback)
-  document.addEventListener('webkitfullscreenchange', callback)
-  document.addEventListener('mozfullscreenchange', callback)
-  document.addEventListener('MSFullscreenChange', callback)
 }
 
 /**
@@ -110,7 +81,4 @@ export function onFullScreenChange(callback: () => void): void {
  */
 export function offFullScreenChange(callback: () => void): void {
   document.removeEventListener('fullscreenchange', callback)
-  document.removeEventListener('webkitfullscreenchange', callback)
-  document.removeEventListener('mozfullscreenchange', callback)
-  document.removeEventListener('MSFullscreenChange', callback)
 }
