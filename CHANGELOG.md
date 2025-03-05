@@ -1,3 +1,12 @@
+## [2.1.14](https://github.com/lhvision/helpers/compare/v2.1.13...v2.1.14) (2025-03-05)
+
+
+### Features
+
+* 新增 sse 流处理函数 ([92656d2](https://github.com/lhvision/helpers/commit/92656d2c7babc59922e7da9847731cefca64c0cc))
+
+
+
 ## [2.1.13](https://github.com/lhvision/helpers/compare/v2.1.12...v2.1.13) (2025-01-07)
 
 
