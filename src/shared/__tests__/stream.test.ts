@@ -1,101 +1,132 @@
-import { describe, expect, it, vi } from 'vitest'
-import { processBinaryStream, processTextStream } from '../stream'
+import type { SSEOutput } from '../stream'
+import { describe, expect, it } from 'vitest'
+import { createBinaryStream, createSSEStream, createTextStream } from '../stream'
 
 describe('stream 处理函数', () => {
-  describe('processTextStream', () => {
+  describe('createTextStream', () => {
     it('应该正确处理文本流', async () => {
-      // 模拟数据
-      const chunks = [
-        new Uint8Array([104, 101, 108]), // "hel"
-        new Uint8Array([108, 111]), // "lo"
-      ]
-
-      // 模拟 Response
-      const mockReader = {
-        read: vi.fn()
-          .mockResolvedValueOnce({ done: false, value: chunks[0] })
-          .mockResolvedValueOnce({ done: false, value: chunks[1] })
-          .mockResolvedValueOnce({ done: true }),
-        releaseLock: vi.fn(),
-      }
-
-      const mockResponse = {
-        body: {
-          getReader: () => mockReader,
+      // 创建模拟数据流
+      const stream = new ReadableStream({
+        async start(controller) {
+          controller.enqueue(new TextEncoder().encode('hel'))
+          controller.enqueue(new TextEncoder().encode('lo'))
+          controller.close()
         },
-      } as unknown as Response
-
-      const receivedChunks: string[] = []
-      const onChunk = vi.fn((chunk: string) => {
-        receivedChunks.push(chunk)
       })
 
-      await processTextStream(mockResponse, onChunk)
+      const receivedChunks: string[] = []
 
-      expect(onChunk).toHaveBeenCalledTimes(2)
+      for await (const chunk of createTextStream(stream)) {
+        receivedChunks.push(chunk)
+      }
+
       expect(receivedChunks.join('')).toBe('hello')
-      expect(mockReader.releaseLock).toHaveBeenCalled()
-    })
-
-    it('在没有 ReadableStream 时应该抛出错误', async () => {
-      const mockResponse = {
-        body: null,
-      } as unknown as Response
-
-      await expect(processTextStream(mockResponse, vi.fn()))
-        .rejects
-        .toThrow('ReadableStream not supported')
     })
   })
 
-  describe('processBinaryStream', () => {
+  describe('createBinaryStream', () => {
     it('应该正确处理二进制流', async () => {
       const chunks = [
         new Uint8Array([1, 2, 3]),
         new Uint8Array([4, 5]),
       ]
 
-      const mockReader = {
-        read: vi.fn()
-          .mockResolvedValueOnce({ done: false, value: chunks[0] })
-          .mockResolvedValueOnce({ done: false, value: chunks[1] })
-          .mockResolvedValueOnce({ done: true }),
-        releaseLock: vi.fn(),
-      }
-
-      const mockResponse = {
-        body: {
-          getReader: () => mockReader,
+      const stream = new ReadableStream({
+        async start(controller) {
+          for (const chunk of chunks) {
+            controller.enqueue(chunk)
+          }
+          controller.close()
         },
-      } as unknown as Response
-
-      const receivedChunks: Uint8Array[] = []
-      const onChunk = vi.fn((chunk: Uint8Array) => {
-        receivedChunks.push(chunk)
       })
 
-      await processBinaryStream(mockResponse, onChunk)
+      const receivedChunks: Uint8Array[] = []
 
-      expect(onChunk).toHaveBeenCalledTimes(2)
-      expect(receivedChunks).toEqual(chunks)
-      expect(mockReader.releaseLock).toHaveBeenCalled()
-    })
-
-    it('在流结束时应该释放锁', async () => {
-      const mockReader = {
-        read: vi.fn().mockResolvedValueOnce({ done: true }),
-        releaseLock: vi.fn(),
+      for await (const chunk of createBinaryStream(stream)) {
+        receivedChunks.push(chunk)
       }
 
-      const mockResponse = {
-        body: {
-          getReader: () => mockReader,
+      expect(receivedChunks).toEqual(chunks)
+    })
+  })
+
+  describe('sse 流处理', () => {
+    it('应该正确解析 SSE 事件', async () => {
+      const events = [
+        'event: message\ndata: {"hello": "world"}\n\n',
+        'id: 1\ndata: {"foo": "bar"}\n\n',
+      ]
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          for (const event of events) {
+            controller.enqueue(new TextEncoder().encode(event))
+          }
+          controller.close()
         },
-      } as unknown as Response
+      })
 
-      await processBinaryStream(mockResponse, vi.fn())
+      const receivedEvents: SSEOutput[] = []
 
-      expect(mockReader.releaseLock).toHaveBeenCalled()
+      for await (const event of createSSEStream(stream)) {
+        receivedEvents.push(event)
+      }
+
+      expect(receivedEvents).toEqual([
+        { event: 'message', data: '{"hello": "world"}' },
+        { id: '1', data: '{"foo": "bar"}' },
+      ])
+    })
+
+    it('应该处理分块接收的 SSE 事件', async () => {
+      const chunks = [
+        'event: mess',
+        'age\ndata: {"he',
+        'llo": "world"}\n\n',
+      ]
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          for (const chunk of chunks) {
+            controller.enqueue(new TextEncoder().encode(chunk))
+          }
+          controller.close()
+        },
+      })
+
+      const receivedEvents: SSEOutput[] = []
+
+      for await (const event of createSSEStream(stream)) {
+        receivedEvents.push(event)
+      }
+
+      expect(receivedEvents).toEqual([
+        { event: 'message', data: '{"hello": "world"}' },
+      ])
+    })
+
+    it('应该支持自定义转换流', async () => {
+      const input = 'event: message\ndata: {"hello": "world"}\n\n'
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(input))
+          controller.close()
+        },
+      })
+
+      // 自定义转换流 - 将数据转换为大写
+      const customTransform = new TransformStream<string, string>({
+        transform(chunk, controller) {
+          controller.enqueue(chunk.toUpperCase())
+        },
+      })
+
+      const received: string[] = []
+      for await (const chunk of createSSEStream<string>(stream, customTransform)) {
+        received.push(chunk)
+      }
+
+      expect(received).toEqual([input.toUpperCase()])
     })
   })
 })

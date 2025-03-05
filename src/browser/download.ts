@@ -1,4 +1,4 @@
-import { processBinaryStream } from '../shared/stream'
+import { createBinaryStream } from '../shared/stream'
 
 export function downloadUrl(url: string, filename?: string) {
   const a = document.createElement('a')
@@ -68,19 +68,21 @@ export async function streamDownload(
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)
   }
+  if (!response.body) {
+    throw new Error('ReadableStream not supported')
+  }
   const total = Number(response.headers.get('content-length'))
   let loaded = startByte
   const chunks: Uint8Array[] = [...initialChunks]
-
   try {
-    await processBinaryStream(response, (chunk) => {
+    for await (const chunk of createBinaryStream(response.body)) {
       chunks.push(chunk)
       if (onProgress) {
         loaded += chunk.length
         const progress = (loaded / total) * 100
         onProgress(progress)
       }
-    })
+    }
 
     const blob = new Blob(chunks)
     downloadBlob(blob, filename)

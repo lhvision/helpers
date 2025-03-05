@@ -108,7 +108,7 @@ async function sendRequest<T = any, R extends ResponseTypeConfig = DataOnlyConfi
       if (cacheConfig?.enable)
         requestManager.setCache(`${baseURL}${url}`, finalResponse, cacheConfig.ttl!)
 
-      return returnData ? finalResponse.data : finalResponse
+      return returnData ? finalResponse.data : finalResponse as RequestResponse<T, R>
     }
     catch (error: any) {
       clearTimeout(timeoutId)

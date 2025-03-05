@@ -31,6 +31,11 @@ import { } from '@lhvision/helpers/upload'
 
 工具函数集合，用于浏览器环境。
 
+#### 请求处理
+
+- `requestManager` - 单例请求管理器
+- `request` - 请求函数
+
 #### 全屏操作
 
 - `exitFullScreen` - 退出全屏
@@ -76,16 +81,13 @@ import { } from '@lhvision/helpers/upload'
 
 通用工具函数。
 
-#### 请求处理
-
-- `requestManager` - 单例请求管理器
-- `request` - 请求函数
-
 #### 流处理
 
-- `processBinaryStream` - 二进制流处理
+- `createBaseStream` - fetch response.body..getReader() ReadableStreamDefaultReader 基础流处理
+- `createBinaryStream` - 二进制流处理，使用迭代器的方式实现，for await (const chunk of createBinaryStream(response))
+- `createTextStream` - 文本流处理，使用迭代器的方式实现
+- `createSSEStream` - SSE 流处理，ai 对话 api 返回处理函数，使用迭代器的方式实现
 - `processByte` - 字节处理
-- `processTextStream` - 文本流处理
 
 #### 工具函数
 

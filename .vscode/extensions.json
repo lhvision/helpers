@@ -46,8 +46,8 @@
 
     // AI
     // "aminer.codegeex",
-    // "GitHub.copilot",
-    "alibaba-cloud.tongyi-lingma"
+    "GitHub.copilot"
+    // "alibaba-cloud.tongyi-lingma"
     // "baiducomate.comate",
   ]
 }

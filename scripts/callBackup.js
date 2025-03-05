@@ -55,3 +55,75 @@ test.myApply(obj, [1, 2, 3]) // 输出: "测试对象" [1, 2, 3]
 // 测试 myBind
 const boundFn = test.myBind(obj, 1, 2)
 boundFn(3, 4) // 输出: "测试对象" [1, 2, 3, 4]
+
+// 冒泡排序（Bubble Sort） O(n^2)。
+function bubbleSort(arr) {
+  const n = arr.length
+  // 外层循环控制比较的轮数
+  for (let i = 0; i < n - 1; i++) {
+    // 内层循环控制每一轮比较的次数
+    for (let j = 0; j < n - i - 1; j++) {
+      if (arr[j] > arr[j + 1]) {
+        // 交换，大的元素往后移动
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]]
+      }
+    }
+  }
+  return arr
+}
+
+const arr = [5, 2, 9, 1, 5, 6]
+console.log(bubbleSort(arr)) // [1, 2, 5, 5, 6, 9]
+
+// 快速排序（Quick Sort）O(nlogn)。
+function quickSort(arr) {
+  if (arr.length <= 1)
+    return arr
+
+  const pivot = arr[arr.length - 1] // 选择最后一个元素作为基准值
+  const left = []
+  const right = []
+
+  for (let i = 0; i < arr.length - 1; i++) {
+    if (arr[i] < pivot) {
+      left.push(arr[i])
+    }
+    else {
+      right.push(arr[i])
+    }
+  }
+
+  return [...quickSort(left), pivot, ...quickSort(right)]
+}
+
+function quickSortTt(arr, left = 0, right = arr.length - 1) {
+  if (left < right) {
+    const pivotIndex = partition(arr, left, right)
+    quickSortTt(arr, left, pivotIndex - 1)
+    quickSortTt(arr, pivotIndex + 1, right)
+  }
+  return arr
+}
+
+function partition(arr, left, right) {
+  const pivot = arr[right]
+  let i = left - 1
+
+  for (let j = left; j < right; j++) {
+    if (arr[j] <= pivot) {
+      i++
+      [arr[i], arr[j]] = [arr[j], arr[i]]
+    }
+  }
+
+  [arr[i + 1], arr[right]] = [arr[right], arr[i + 1]]
+  return i + 1
+}
+
+const arr2 = [5, 2, 9, 1, 5, 6]
+console.time('quickSort')
+console.log(quickSort(arr2)) // [1, 2, 5, 5, 6, 9]
+console.timeEnd('quickSort')
+console.time('quickSortTt')
+console.log(quickSortTt(arr2)) // [1, 2, 5, 5, 6, 9]
+console.timeEnd('quickSortTt')

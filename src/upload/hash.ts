@@ -111,6 +111,14 @@ function calculateChunkBounds(i: number, chunkSize: number, fileSize: number) {
   return { chunkStart, chunkEnd }
 }
 
+// 使用 ObjectURL 创建 Worker
+// new Blob([chunksMD5WorkerCode], {
+//   type: 'application/javascript'
+// })
+// URL.createObjectURL(chunksMD5WorkerBlob)
+// 使用 DataURL 创建 Worker
+// `data:application/javascript;utf8,${chunksMD5WorkerCode}`
+
 /**
  * 使用 Web Worker 获取大文件 hash
  * @param createWorker 可以使用 pnpm helpers [options] [targetDir="src/worker"] 创建一个 worker 实现
