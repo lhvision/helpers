@@ -83,7 +83,7 @@ import { } from '@lhvision/helpers/upload'
 
 #### 流处理
 
-- `createBaseStream` - fetch response.body..getReader() ReadableStreamDefaultReader 基础流处理
+- `createBaseStream` - fetch response.body.getReader() ReadableStreamDefaultReader 基础流处理
 - `createBinaryStream` - 二进制流处理，使用迭代器的方式实现，for await (const chunk of createBinaryStream(response))
 - `createTextStream` - 文本流处理，使用迭代器的方式实现
 - `createSSEStream` - SSE 流处理，ai 对话 api 返回处理函数，使用迭代器的方式实现
